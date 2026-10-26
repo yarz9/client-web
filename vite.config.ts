@@ -5,10 +5,5 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), cloudflare()],
-  build: {
-    rolldownOptions: {
-      external: ['@freebuff/auth'],
-    },
-  },
   server: { port: 5173, strictPort: false },
 })
