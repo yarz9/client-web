@@ -1,0 +1,136 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+@import '@fontsource/instrument-serif';
+@import '@fontsource/instrument-serif/400-italic.css';
+
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+
+  --color-bg: #faf9f5;
+  --color-surface: #fffefa;
+  --color-surface-2: #eff0e8;
+  --color-line: #e5e5dc;
+  --color-line-strong: #cfd2c4;
+  --color-fg: #252c24;
+  --color-muted: #697168;
+  --color-faint: #969c90;
+  --color-accent: #657458;
+  --color-accent-soft: #e5eadf;
+  --color-olive: #657458;
+  --color-olive-deep: #394636;
+  --color-blue-wash: #eaf1f1;
+  --color-blue: #9db9bb;
+
+  --radius-control: 14px;
+  --radius-card: 22px;
+  --radius-image: 26px;
+  --radius-dialog: 24px;
+
+  --shadow-soft: 0 1px 2px rgb(28 26 23 / 0.05), 0 12px 40px -16px rgb(28 26 23 / 0.18);
+  --shadow-drawer: 0 0 0 1px rgb(28 26 23 / 0.05), -20px 0 60px -20px rgb(28 26 23 / 0.3);
+
+  --animate-marquee: marquee 36s linear infinite;
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    corner-shape: squircle;
+    border-color: var(--color-line);
+  }
+  .round,
+  .round::before,
+  .round::after {
+    corner-shape: round;
+  }
+  html {
+    background: var(--color-bg);
+    color-scheme: light;
+    overscroll-behavior-y: none;
+    scroll-behavior: smooth;
+  }
+  body {
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    letter-spacing: -0.008em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow-x: clip;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+  }
+  :focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--color-fg) 50%, transparent);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--color-accent) 20%, transparent);
+  }
+  img {
+    user-select: none;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { cursor: pointer; }
+  ::selection { background: #dfe8da; color: #283328; }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@utility font-display {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  line-height: 1;
+}
+
+@utility text-balance {
+  text-wrap: balance;
+}
+
+@utility text-pretty {
+  text-wrap: pretty;
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Product imagery sits on a cream that matches the photos, so the frame
+   disappears and the object floats. */
+@utility image-frame {
+  background: #eff0e8;
+  overflow: hidden;
+}
+
+.botanical-grain {
+  background-image: radial-gradient(ellipse at 72% 18%, rgb(255 255 255 / .68), transparent 34%), radial-gradient(ellipse at 14% 88%, rgb(157 185 187 / .18), transparent 38%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within { scroll-behavior: auto; }
+}
