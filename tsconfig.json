@@ -14,9 +14,12 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["vite/client", "@cloudflare/workers-types"],
+    "types": ["vite/client"],
     "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] }
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
-  "include": ["src", "vite.config.ts"]
+  "include": ["src/app", "src/data/products.ts", "src/main.tsx", "vite.config.ts"],
+  "exclude": ["dist", "node_modules", "src/worker", "src/data/products-bridge.ts"]
 }
