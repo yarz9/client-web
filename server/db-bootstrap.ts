@@ -1,12 +1,11 @@
 import mysql from 'mysql2/promise'
 import { readFile } from 'node:fs/promises'
-import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { categories, products } from '../src/data/products.ts'
+import { resolve } from 'node:path'
+import { categories, products } from '../src/data/products.js'
 
 // Read the ignored local .env when running outside Railway; real variables always win.
 try {
-  const envFile = await readFile(resolve(dirname(fileURLToPath(import.meta.url)), '..', '.env'), 'utf8')
+  const envFile = await readFile(resolve(process.cwd(), '.env'), 'utf8')
   for (const line of envFile.split(/\r?\n/)) {
     const match = /^\s*([A-Za-z0-9_]+)\s*=\s*(.*?)\s*$/.exec(line)
     if (!match || process.env[match[1]] !== undefined) continue
@@ -32,7 +31,10 @@ if (!dbUrl) {
   process.exit(1)
 }
 
-const db = await mysql.createConnection(dbUrl)
+const db = await mysql.createConnection(dbUrl).catch((error: unknown) => {
+  console.error(`Could not connect to MySQL: ${error instanceof Error ? error.message : String(error)}`)
+  process.exit(1)
+})
 
 try {
   await db.query(`CREATE TABLE IF NOT EXISTS categories (
