@@ -20,6 +20,20 @@ try {
   // No .env file: rely on the hosting platform's environment variables.
 }
 
+// Railway's MySQL service can expose a ready-made URL or only separate MYSQL* parts,
+// so accept whichever is present instead of insisting on a single variable name.
+function resolveDatabaseUrl() {
+  for (const candidate of [process.env.DATABASE_URL, process.env.MYSQL_URL, process.env.DATABASE_PRIVATE_URL, process.env.MYSQL_PUBLIC_URL]) {
+    if (candidate && candidate.trim()) return candidate.trim()
+  }
+  const { MYSQLHOST, MYSQLPORT, MYSQLUSER, MYSQLPASSWORD, MYSQLDATABASE } = process.env
+  if (!MYSQLHOST || !MYSQLUSER || !MYSQLDATABASE) return ''
+  const identity = MYSQLPASSWORD ? `${encodeURIComponent(MYSQLUSER)}:${encodeURIComponent(MYSQLPASSWORD)}` : encodeURIComponent(MYSQLUSER)
+  return `mysql://${identity}@${MYSQLHOST}:${MYSQLPORT ?? '3306'}/${MYSQLDATABASE}`
+}
+
+const DATABASE_URL = resolveDatabaseUrl()
+
 const STATIC_ROOT = resolve(__dirname, '..', 'dist', 'client')
 const ADMIN_SESSION_COOKIE = 'bioherbica_admin'
 const ADMIN_SESSION_SECONDS = 8 * 60 * 60
@@ -134,7 +148,13 @@ type SqlDb = {
   end(): Promise<void>
 }
 
-const app = new Hono()
+const app = new Hono<{ Bindings: { db: SqlDb } }>()
+
+// Hono only fills `c.var` from `c.set()`, so expose the per-request database handle here.
+app.use('*', async (c, next) => {
+  c.set('db', c.env.db)
+  await next()
+})
 
 app.onError((error, c) => {
   console.error('BioHerbica backend request failed:', error.name, error.message)
@@ -757,16 +777,16 @@ const server = http.createServer(async (request, response) => {
     return
   }
 
-  if (!process.env.DATABASE_URL) {
+  if (!DATABASE_URL) {
     response.statusCode = 503
     response.setHeader('content-type', 'application/json; charset=utf-8')
-    response.end(JSON.stringify({ error: 'DATABASE_URL nije konfigurisan.' }))
+    response.end(JSON.stringify({ error: 'Baza podataka nije povezana. Dodajte varijablu DATABASE_URL na Railway servis, ili povežite MySQL servis kao referencu.' }))
     return
   }
 
   let connection: mysql.Connection | undefined
   const openConnection = async () => {
-    connection ??= await mysql.createConnection(process.env.DATABASE_URL as string)
+    connection ??= await mysql.createConnection(DATABASE_URL)
     return connection
   }
   // Opened on first query so the admin login and other database-free routes still work
@@ -779,7 +799,7 @@ const server = http.createServer(async (request, response) => {
     async end() { const current = connection; connection = undefined; await current?.end().catch(() => {}) },
   }
   try {
-    const result = await app.fetch(apiRequest, { Variables: { db } as never })
+    const result = await app.fetch(apiRequest, { db } as never)
     response.statusCode = result.status
     result.headers.forEach((value, key) => response.setHeader(key, value))
     response.end(Buffer.from(await result.arrayBuffer()))

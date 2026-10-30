@@ -1,9 +1,34 @@
 import mysql from 'mysql2/promise'
+import { readFile } from 'node:fs/promises'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { categories, products } from '../src/data/products.js'
 
-const dbUrl = process.env.DATABASE_URL
+// Read the ignored local .env when running outside Railway; real variables always win.
+try {
+  const envFile = await readFile(resolve(dirname(fileURLToPath(import.meta.url)), '..', '.env'), 'utf8')
+  for (const line of envFile.split(/\r?\n/)) {
+    const match = /^\s*([A-Za-z0-9_]+)\s*=\s*(.*?)\s*$/.exec(line)
+    if (!match || process.env[match[1]] !== undefined) continue
+    process.env[match[1]] = match[2].replace(/^(['"])(.*)\1$/, '$2')
+  }
+} catch {
+  // No .env file present.
+}
+
+function resolveDatabaseUrl() {
+  for (const candidate of [process.env.DATABASE_URL, process.env.MYSQL_URL, process.env.DATABASE_PRIVATE_URL, process.env.MYSQL_PUBLIC_URL]) {
+    if (candidate && candidate.trim()) return candidate.trim()
+  }
+  const { MYSQLHOST, MYSQLPORT, MYSQLUSER, MYSQLPASSWORD, MYSQLDATABASE } = process.env
+  if (!MYSQLHOST || !MYSQLUSER || !MYSQLDATABASE) return ''
+  const identity = MYSQLPASSWORD ? `${encodeURIComponent(MYSQLUSER)}:${encodeURIComponent(MYSQLPASSWORD)}` : encodeURIComponent(MYSQLUSER)
+  return `mysql://${identity}@${MYSQLHOST}:${MYSQLPORT ?? '3306'}/${MYSQLDATABASE}`
+}
+
+const dbUrl = resolveDatabaseUrl()
 if (!dbUrl) {
-  console.error('DATABASE_URL is required')
+  console.error('No database connection string found. Set DATABASE_URL (Railway: reference the MySQL service variable) or connect the MySQL service so MYSQLHOST/MYSQLUSER/MYSQLDATABASE are available.')
   process.exit(1)
 }
 
