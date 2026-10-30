@@ -45,8 +45,18 @@ function secureEqual(left: string, right: string) {
   return timingSafeEqual(leftDigest, rightDigest) && left.length === right.length
 }
 
+// A dedicated secret is preferred. Without one, a stable key is derived from the
+// password so a deployment only needs the two login variables to work.
+function sessionSecret() {
+  const configured = (process.env.ADMIN_SESSION_SECRET ?? '').trim()
+  if (configured.length >= 32) return configured
+  const { username, password } = adminCredentials()
+  if (!username || password.length < 8) return ''
+  return createHmac('sha256', password).update(`bioherbica-session:${username}`).digest('base64url')
+}
+
 function sessionSignature(payload: string) {
-  return createHmac('sha256', process.env.ADMIN_SESSION_SECRET ?? '').update(payload).digest('base64url')
+  return createHmac('sha256', sessionSecret()).update(payload).digest('base64url')
 }
 
 function adminCredentials() {
@@ -58,8 +68,16 @@ function adminCredentials() {
 }
 
 function adminConfigured() {
-  const { username, password, secret } = adminCredentials()
-  return username.length >= 3 && password.length >= 8 && secret.length >= 32
+  const { username, password } = adminCredentials()
+  return username.length >= 3 && password.length >= 8 && sessionSecret() !== ''
+}
+
+function missingAdminSettings() {
+  const { username, password } = adminCredentials()
+  const missing: string[] = []
+  if (username.length < 3) missing.push('ADMIN_USERNAME')
+  if (password.length < 8) missing.push('ADMIN_PASSWORD')
+  return missing
 }
 
 function hasAdminSession(request: Request) {
@@ -181,7 +199,8 @@ app.get('/api/admin/session', (c) => {
 
 app.post('/api/admin/session', async (c) => {
   if (!isSameOrigin(c.req.raw)) return c.json({ error: 'Zahtjev nije poslan s ove stranice.' }, 403, ADMIN_HEADERS)
-  if (!adminConfigured()) return c.json({ error: 'Administratorski pristup nije konfigurisan.' }, 503, ADMIN_HEADERS)
+  const missing = missingAdminSettings()
+  if (missing.length > 0) return c.json({ error: `Administratorski pristup nije konfigurisan. Postavite ${missing.join(' i ')} na Railway servisu (korisničko ime najmanje 3 znaka, lozinka najmanje 8).` }, 503, ADMIN_HEADERS)
   pruneSessions()
   const key = requestKey(c.req.raw)
   const now = Date.now()
