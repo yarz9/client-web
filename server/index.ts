@@ -6,6 +6,20 @@ import { dirname, extname, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+
+// Local development convenience: read an ignored .env next to the project root.
+// Real environment variables, such as the ones Railway injects, always win.
+try {
+  const envFile = await readFile(resolve(__dirname, '..', '.env'), 'utf8')
+  for (const line of envFile.split(/\r?\n/)) {
+    const match = /^\s*([A-Za-z0-9_]+)\s*=\s*(.*?)\s*$/.exec(line)
+    if (!match || process.env[match[1]] !== undefined) continue
+    process.env[match[1]] = match[2].replace(/^(['"])(.*)\1$/, '$2')
+  }
+} catch {
+  // No .env file: rely on the hosting platform's environment variables.
+}
+
 const STATIC_ROOT = resolve(__dirname, '..', 'dist', 'client')
 const ADMIN_SESSION_COOKIE = 'bioherbica_admin'
 const ADMIN_SESSION_SECONDS = 8 * 60 * 60
@@ -21,10 +35,21 @@ function sessionSignature(payload: string) {
   return createHmac('sha256', process.env.ADMIN_SESSION_SECRET ?? '').update(payload).digest('base64url')
 }
 
+function adminCredentials() {
+  return {
+    username: (process.env.ADMIN_USERNAME ?? '').trim(),
+    password: process.env.ADMIN_PASSWORD ?? '',
+    secret: process.env.ADMIN_SESSION_SECRET ?? '',
+  }
+}
+
+function adminConfigured() {
+  const { username, password, secret } = adminCredentials()
+  return username.length >= 3 && password.length >= 8 && secret.length >= 32
+}
+
 function hasAdminSession(request: Request) {
-  const code = process.env.ADMIN_CODE ?? ''
-  const secret = process.env.ADMIN_SESSION_SECRET ?? ''
-  if (code.length < 12 || secret.length < 32) return false
+  if (!adminConfigured()) return false
   const cookie = request.headers.get('cookie') ?? ''
   const token = cookie.split(';').map(part => part.trim()).find(part => part.startsWith(`${ADMIN_SESSION_COOKIE}=`))?.slice(ADMIN_SESSION_COOKIE.length + 1)
   if (!token) return false
@@ -91,7 +116,6 @@ type ProductRow = {
 }
 
 const STATUSES: OrderStatus[] = ['Novo', 'Potvrđeno', 'U pripremi', 'Poslano', 'Isporučeno', 'Otkazano']
-const ADMIN_CODE = (process.env.ADMIN_CODE ?? '').trim()
 const IMAGE_KEY_RE = /^[a-zA-Z0-9][a-zA-Z0-9/_-]{0,180}\.(?:jpg|jpeg|png|webp)$/i
 const PRODUCT_SELECT = 'SELECT id, slug, name, price, size, category, image, short, description, details, verification_status AS verificationStatus, available, featured, reference_price AS referencePrice, sort_order AS sortOrder, created_at AS createdAt FROM products'
 const ADMIN_HEADERS = {
@@ -137,20 +161,20 @@ app.get('/api/admin/session', (c) => {
 
 app.post('/api/admin/session', async (c) => {
   if (!isSameOrigin(c.req.raw)) return c.json({ error: 'Zahtjev nije poslan s ove stranice.' }, 403, ADMIN_HEADERS)
-  const code = process.env.ADMIN_CODE ?? ''
-  const secret = process.env.ADMIN_SESSION_SECRET ?? ''
-  if (code.length < 12 || secret.length < 32) return c.json({ error: 'Administratorski pristup nije konfigurisan.' }, 503, ADMIN_HEADERS)
+  if (!adminConfigured()) return c.json({ error: 'Administratorski pristup nije konfigurisan.' }, 503, ADMIN_HEADERS)
   pruneSessions()
   const key = requestKey(c.req.raw)
   const now = Date.now()
   const attempt = loginAttempts.get(key)
   if (attempt && attempt.count >= 8 && attempt.resetAt > now) return c.json({ error: 'Previše pokušaja. Sačekajte 15 minuta.' }, 429, { ...ADMIN_HEADERS, 'Retry-After': String(Math.ceil((attempt.resetAt - now) / 1000)) })
-  let body: { code?: unknown }
-  try { body = await c.req.json() } catch { return c.json({ error: 'Unesite administratorsku lozinku.' }, 400, ADMIN_HEADERS) }
-  if (typeof body.code !== 'string' || body.code.length > 256 || !secureEqual(body.code, code)) {
+  let body: { username?: unknown; password?: unknown }
+  try { body = await c.req.json() } catch { return c.json({ error: 'Unesite korisničko ime i lozinku.' }, 400, ADMIN_HEADERS) }
+  const { username, password } = adminCredentials()
+  const validLogin = typeof body.username === 'string' && typeof body.password === 'string' && body.username.length <= 128 && body.password.length <= 256 && secureEqual(body.username.trim(), username) && secureEqual(body.password, password)
+  if (!validLogin) {
     const current = attempt && attempt.resetAt > now ? attempt : { count: 0, resetAt: now + 15 * 60 * 1000 }
     current.count += 1; loginAttempts.set(key, current)
-    return c.json({ error: 'Lozinka nije ispravna.' }, 401, ADMIN_HEADERS)
+    return c.json({ error: 'Korisničko ime ili lozinka nisu ispravni.' }, 401, ADMIN_HEADERS)
   }
   loginAttempts.delete(key)
   const nonce = randomBytes(24).toString('base64url')
@@ -263,7 +287,7 @@ app.post('/api/orders', async (c) => {
 
 app.get('/api/admin/orders', async (c) => {
   if (!adminFor(c)) {
-    return c.json({ error: 'Pin nije odobren.' }, 401, ADMIN_HEADERS)
+    return c.json({ error: 'Prijava nije odobrena.' }, 401, ADMIN_HEADERS)
   }
   const db = c.var.db as unknown as SqlDb
   const [rows] = await db.prepare('SELECT reference, CAST(customer_json AS CHAR) AS customerJson, CAST(items_json AS CHAR) AS itemsJson, subtotal, delivery_charge AS deliveryCharge, total, payment_method AS paymentMethod, status, created_at AS createdAt FROM orders ORDER BY created_at DESC LIMIT 250').execute() as Order[][]
@@ -273,7 +297,7 @@ app.get('/api/admin/orders', async (c) => {
 app.patch('/api/admin/orders/:reference', async (c) => {
   if (!isSameOrigin(c.req.raw)) return c.json({ error: 'Zahtjev nije poslan s ove stranice.' }, 403)
   if (!adminFor(c)) {
-    return c.json({ error: 'Pin nije odobren.' }, 401, ADMIN_HEADERS)
+    return c.json({ error: 'Prijava nije odobrena.' }, 401, ADMIN_HEADERS)
   }
   const db = c.var.db as unknown as SqlDb
   const reference = c.req.param('reference')
@@ -307,7 +331,7 @@ app.patch('/api/admin/orders/:reference', async (c) => {
 app.get('/api/admin/images/:key{.+}', async (c) => {
   const key = decodeURIComponent(c.req.param('key'))
   if (!IMAGE_KEY_RE.test(key)) return c.json({ error: 'Naziv slike nije validan.' }, 400)
-  if (!adminFor(c)) return c.json({ error: 'Pin nije odobren.' }, 401, ADMIN_HEADERS)
+  if (!adminFor(c)) return c.json({ error: 'Prijava nije odobrena.' }, 401, ADMIN_HEADERS)
 
   const db = c.var.db
   const [rows] = await db.prepare('SELECT data, mimetype FROM product_images WHERE keyname = ?').execute([key]) as unknown as { data: Buffer; mimetype: string }[][]
@@ -327,7 +351,7 @@ app.post('/api/admin/images/:key{.+}', async (c) => {
   if (!isSameOrigin(c.req.raw)) return c.json({ error: 'Zahtjev nije poslan s ove stranice.' }, 403)
   const key = decodeURIComponent(c.req.param('key'))
   if (!IMAGE_KEY_RE.test(key)) return c.json({ error: 'Naziv slike nije validan.' }, 400)
-  if (!adminFor(c)) return c.json({ error: 'Pin nije odobren.' }, 401, ADMIN_HEADERS)
+  if (!adminFor(c)) return c.json({ error: 'Prijava nije odobrena.' }, 401, ADMIN_HEADERS)
 
   const contentType = c.req.header('content-type') ?? ''
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(contentType)) return c.json({ error: 'Dozvoljene su JPG, PNG i WebP slike.' }, 415)
@@ -350,7 +374,7 @@ app.delete('/api/admin/images/:key{.+}', async (c) => {
   if (!isSameOrigin(c.req.raw)) return c.json({ error: 'Zahtjev nije poslan s ove stranice.' }, 403)
   const key = decodeURIComponent(c.req.param('key'))
   if (!IMAGE_KEY_RE.test(key)) return c.json({ error: 'Naziv slike nije validan.' }, 400)
-  if (!adminFor(c)) return c.json({ error: 'Pin nije odobren.' }, 401, ADMIN_HEADERS)
+  if (!adminFor(c)) return c.json({ error: 'Prijava nije odobrena.' }, 401, ADMIN_HEADERS)
 
   const db = c.var.db
   const [result] = await db.prepare('DELETE FROM product_images WHERE keyname = ?').execute([key]) as unknown as [mysql.ResultSetHeader, unknown]
@@ -389,7 +413,7 @@ app.get('/api/images/:key{.+}', async (c) => {
 
 app.post('/api/admin/products', async (c) => {
   if (!isSameOrigin(c.req.raw)) return c.json({ error: 'Zahtjev nije poslan s ove stranice.' }, 403)
-  if (!adminFor(c)) return c.json({ error: 'Pin nije odobren.' }, 401, ADMIN_HEADERS)
+  if (!adminFor(c)) return c.json({ error: 'Prijava nije odobrena.' }, 401, ADMIN_HEADERS)
 
   const db = c.var.db
   let body: Partial<ProductRow>
@@ -442,7 +466,7 @@ app.post('/api/admin/products', async (c) => {
 
 app.patch('/api/admin/products/:id', async (c) => {
   if (!isSameOrigin(c.req.raw)) return c.json({ error: 'Zahtjev nije poslan s ove stranice.' }, 403)
-  if (!adminFor(c)) return c.json({ error: 'Pin nije odobren.' }, 401, ADMIN_HEADERS)
+  if (!adminFor(c)) return c.json({ error: 'Prijava nije odobrena.' }, 401, ADMIN_HEADERS)
 
   const db = c.var.db
   const id = Number(c.req.param('id'))
@@ -513,7 +537,7 @@ app.patch('/api/admin/products/:id', async (c) => {
 
 app.delete('/api/admin/products/:id', async (c) => {
   if (!isSameOrigin(c.req.raw)) return c.json({ error: 'Zahtjev nije poslan s ove stranice.' }, 403)
-  if (!adminFor(c)) return c.json({ error: 'Pin nije odobren.' }, 401, ADMIN_HEADERS)
+  if (!adminFor(c)) return c.json({ error: 'Prijava nije odobrena.' }, 401, ADMIN_HEADERS)
 
   const db = c.var.db
   const id = Number(c.req.param('id'))
@@ -557,7 +581,7 @@ app.patch('/api/admin/policies/:key', async (c) => {
 
 app.post('/api/admin/categories', async (c) => {
   if (!isSameOrigin(c.req.raw)) return c.json({ error: 'Zahtjev nije poslan s ove stranice.' }, 403)
-  if (!adminFor(c)) return c.json({ error: 'Pin nije odobren.' }, 401, ADMIN_HEADERS)
+  if (!adminFor(c)) return c.json({ error: 'Prijava nije odobrena.' }, 401, ADMIN_HEADERS)
 
   const db = c.var.db
   let body: { key: string; label: string; blurb?: string | null; number?: string | null; sortOrder?: number }
@@ -587,7 +611,7 @@ app.post('/api/admin/categories', async (c) => {
 
 app.patch('/api/admin/categories/:key', async (c) => {
   if (!isSameOrigin(c.req.raw)) return c.json({ error: 'Zahtjev nije poslan s ove stranice.' }, 403)
-  if (!adminFor(c)) return c.json({ error: 'Pin nije odobren.' }, 401, ADMIN_HEADERS)
+  if (!adminFor(c)) return c.json({ error: 'Prijava nije odobrena.' }, 401, ADMIN_HEADERS)
 
   const db = c.var.db
   const key = c.req.param('key')
@@ -615,7 +639,7 @@ app.patch('/api/admin/categories/:key', async (c) => {
 
 app.delete('/api/admin/categories/:key', async (c) => {
   if (!isSameOrigin(c.req.raw)) return c.json({ error: 'Zahtjev nije poslan s ove stranice.' }, 403)
-  if (!adminFor(c)) return c.json({ error: 'Pin nije odobren.' }, 401, ADMIN_HEADERS)
+  if (!adminFor(c)) return c.json({ error: 'Prijava nije odobrena.' }, 401, ADMIN_HEADERS)
 
   const db = c.var.db
   const key = c.req.param('key')
@@ -741,9 +765,21 @@ const server = http.createServer(async (request, response) => {
   }
 
   let connection: mysql.Connection | undefined
+  const openConnection = async () => {
+    connection ??= await mysql.createConnection(process.env.DATABASE_URL as string)
+    return connection
+  }
+  // Opened on first query so the admin login and other database-free routes still work
+  // while the database is starting up or briefly unavailable.
+  const db: SqlDb = {
+    async query(sql, params) { return (await openConnection()).query(sql, params as never) },
+    prepare(sql) {
+      return { async execute(params) { return (await openConnection()).execute(sql, params as never) } }
+    },
+    async end() { const current = connection; connection = undefined; await current?.end().catch(() => {}) },
+  }
   try {
-    connection = await mysql.createConnection(process.env.DATABASE_URL)
-    const result = await app.fetch(apiRequest, { Variables: { db: connection } as never })
+    const result = await app.fetch(apiRequest, { Variables: { db } as never })
     response.statusCode = result.status
     result.headers.forEach((value, key) => response.setHeader(key, value))
     response.end(Buffer.from(await result.arrayBuffer()))

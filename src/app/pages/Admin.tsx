@@ -30,7 +30,7 @@ export function Admin() {
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
   const [authenticated, setAuthenticated] = useState(false)
-  const [adminCode, setAdminCode] = useState('')
+  const [credentials, setCredentials] = useState({ username: '', password: '' })
   const [section, setSection] = useState<'orders' | 'products' | 'categories' | 'policies'>('orders')
   const [productForm, setProductForm] = useState<ProductForm>(blankProduct)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -62,8 +62,8 @@ export function Admin() {
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setBusy(true); setError('')
     try {
-      await api('/api/admin/session', { method: 'POST', body: JSON.stringify({ code: adminCode }) })
-      setAdminCode(''); await loadAll()
+      await api('/api/admin/session', { method: 'POST', body: JSON.stringify({ username: credentials.username, password: credentials.password }) })
+      setCredentials({ username: '', password: '' }); await loadAll()
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Prijava nije uspjela.'); setBusy(false) }
   }
 
@@ -136,7 +136,7 @@ export function Admin() {
     finally { event.currentTarget.value = '' }
   }
 
-  if (!authenticated) return <Container className="pb-24 pt-16"><div className="mx-auto max-w-md border border-line bg-white p-7 sm:p-10"><p className="text-[10px] uppercase tracking-[.18em] text-olive">BioHerbica · upravljanje</p><h1 className="font-display mt-4 text-[43px] leading-none">Administratorska prijava</h1><p className="mt-4 text-[12px] leading-relaxed text-muted">Pristupite upravljanju katalogom i narudžbama sigurnom administratorskom sesijom.</p><form className="mt-6 flex flex-col gap-3" onSubmit={login}><input type="password" autoComplete="current-password" required minLength={12} value={adminCode} onChange={event => setAdminCode(event.target.value)} className={inputClass} aria-label="Administratorska lozinka" placeholder="Administratorska lozinka"/><Button type="submit" loading={busy} className="w-full">Prijavite se</Button></form>{error && <p role="alert" className="mt-4 text-[12px] text-accent">{error}</p>}</div></Container>
+  if (!authenticated) return <Container className="pb-24 pt-16"><div className="mx-auto max-w-md border border-line bg-white p-7 sm:p-10"><p className="text-[10px] uppercase tracking-[.18em] text-olive">BioHerbica · upravljanje</p><h1 className="font-display mt-4 text-[43px] leading-none">Administratorska prijava</h1><p className="mt-4 text-[12px] leading-relaxed text-muted">Prijavite se za upravljanje katalogom, narudžbama i uslovima kupovine.</p><form className="mt-6 flex flex-col gap-3" onSubmit={login}><label className="flex flex-col gap-1 text-[11px]">Korisničko ime<input autoComplete="username" required value={credentials.username} onChange={event => setCredentials(current => ({ ...current, username: event.target.value }))} className={inputClass} placeholder="bioadmin"/></label><label className="flex flex-col gap-1 text-[11px]">Lozinka<input type="password" autoComplete="current-password" required minLength={8} value={credentials.password} onChange={event => setCredentials(current => ({ ...current, password: event.target.value }))} className={inputClass} placeholder="Lozinka"/></label><Button type="submit" loading={busy} className="w-full">Prijavite se</Button></form>{error && <p role="alert" className="mt-4 text-[12px] text-accent">{error}</p>}</div></Container>
 
   return <Container className="pb-24 pt-10 sm:pt-12">
     <div className="flex flex-wrap items-end justify-between gap-5 border-b border-line pb-6"><div><p className="text-[10px] uppercase tracking-[.18em] text-olive">Samo za vlasnicu</p><h1 className="font-display mt-3 text-[45px] sm:text-[49px]">Upravljanje</h1></div><div className="flex flex-wrap gap-2"><Button variant="secondary" size="sm" onClick={() => void loadAll()} disabled={busy}>{busy ? 'Učitava se…' : 'Osvježi'}</Button><Button variant="secondary" size="sm" onClick={() => void logout()}>Odjava</Button></div></div>
