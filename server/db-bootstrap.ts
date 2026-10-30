@@ -2,7 +2,7 @@ import mysql from 'mysql2/promise'
 import { readFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { categories, products } from '../src/data/products.js'
+import { categories, products } from '../src/data/products.ts'
 
 // Read the ignored local .env when running outside Railway; real variables always win.
 try {

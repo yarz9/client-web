@@ -10,7 +10,7 @@
     "start": "node server/index.js",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "db:bootstrap": "node --loader ts-node/esm server/db-bootstrap.ts"
+    "db:bootstrap": "node server/db-bootstrap.ts"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
