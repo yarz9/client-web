@@ -2,28 +2,21 @@ import { motion } from 'motion/react'
 import { ArrowDown, ArrowRight, FlaskConical, Heart, Sparkles } from 'lucide-react'
 import { Link } from 'react-router'
 
-import { categories, newArrivals } from '../../data/products'
+import { useCatalog } from '../lib/catalog'
 import { ProductCard } from '../components/ProductCard'
 import { ButtonLink, Container, Reveal, SectionTitle } from '../components/ui'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
 const categoryScenes = [
-  { background: 'linear-gradient(145deg,#e9eee5,#cbd5c5)', symbol: '✳', label: 'Njega lica' },
-  { background: 'linear-gradient(145deg,#f2eae0,#e4d7c6)', symbol: '◒', label: 'Njega tijela' },
-  { background: 'linear-gradient(145deg,#e9eff0,#c9dfe0)', symbol: '〰', label: 'Čajevi i mješavine' },
+  { background: 'linear-gradient(145deg,#e9eee5,#cbd5c5)', symbol: '✳' },
+  { background: 'linear-gradient(145deg,#f2eae0,#e4d7c6)', symbol: '◒' },
+  { background: 'linear-gradient(145deg,#e9eff0,#c9dfe0)', symbol: '〰' },
 ]
 
-function PlaceholderArt({ label, symbol, className = '' }: { label: string; symbol: string; className?: string }) {
-  return (
-    <div className={`botanical-grain relative grid h-full w-full place-items-center overflow-hidden ${className}`} role="img" aria-label={`Privremeni vizuelni prikaz: ${label}`}>
-      <span aria-hidden="true" className="font-display select-none text-[clamp(7rem,20vw,19rem)] leading-none text-[color:var(--color-olive)]/35">{symbol}</span>
-      <span className="absolute bottom-4 left-4 border-b border-olive/35 pb-1 text-[10px] uppercase tracking-[.2em] text-olive-deep/75">Razvojni vizuelni prikaz</span>
-    </div>
-  )
-}
-
 export function Home() {
+  const { categories, products } = useCatalog()
+  const newArrivals = products.slice(0, 4)
   return (
     <>
       <section className="relative overflow-hidden pb-16 pt-9 sm:pb-24 sm:pt-14 lg:pt-20">
@@ -57,7 +50,7 @@ export function Home() {
                 <div className="absolute inset-[5%_9%_10%_7%] rotate-[-5deg] border border-olive/20" />
                 <div className="absolute inset-[1%_4%_5%_12%] rotate-[3deg] bg-blue-wash" />
                 <div className="absolute inset-[4%_9%_8%_8%] overflow-hidden bg-[#e9ece3] shadow-[0_24px_80px_-42px_rgba(46,63,49,.4)]">
-                  <PlaceholderArt label="biljni proizvodi BioHerbica" symbol="❋" />
+                  <img src="/images/products/q10-nar-divlja-ruza.webp" alt="Q10 krema od nara i divlje ruže — fotografija s dostavljene kolekcije" className="size-full object-cover object-center" fetchPriority="high" />
                 </div>
                 <div className="absolute right-[0%] top-[12%] flex size-[98px] rotate-[9deg] flex-col items-center justify-center rounded-full border border-olive/25 bg-bg/85 text-olive-deep sm:size-[122px]">
                   <span className="font-display text-[31px] leading-none sm:text-[39px]">BH</span><span className="mt-1 text-[8px] uppercase tracking-[.18em]">Tuzla</span>
@@ -86,9 +79,10 @@ export function Home() {
           <div className="mt-11 grid gap-px bg-line md:grid-cols-3">
             {categoryScenes.map((scene, index) => {
               const category = categories[index]
+              if (!category) return null
               return <Reveal key={category.key} delay={index * .08}><Link to={`/shop?category=${category.key}`} className="group relative block min-h-[285px] overflow-hidden bg-bg sm:min-h-[390px]">
                 <div className="absolute inset-0 transition-transform duration-700 group-hover:scale-[1.035]" style={{ background: scene.background }}><span aria-hidden="true" className="absolute -right-5 -top-12 font-display text-[280px] leading-none text-white/45">{scene.symbol}</span><span className="absolute bottom-12 left-[13%] font-display text-[124px] italic text-olive/40">{String(index + 1).padStart(2, '0')}</span></div>
-                <div className="absolute inset-x-0 bottom-0 flex items-end justify-between px-6 pb-6 pt-12 sm:px-8 sm:pb-8"><div><span className="text-[10px] uppercase tracking-[.2em] text-olive">{category.number} / BioHerbica</span><h3 className="font-display mt-2 text-[32px] sm:text-[38px]">{scene.label}</h3><p className="mt-1 text-[12px] text-muted">{category.blurb}</p></div><span className="grid size-11 place-items-center border border-olive/30 text-olive transition-all group-hover:bg-olive group-hover:text-white"><ArrowRight className="size-4"/></span></div>
+                <div className="absolute inset-x-0 bottom-0 flex items-end justify-between px-6 pb-6 pt-12 sm:px-8 sm:pb-8"><div><span className="text-[10px] uppercase tracking-[.2em] text-olive">{category.number} / BioHerbica</span><h3 className="font-display mt-2 text-[32px] sm:text-[38px]">{category.label}</h3><p className="mt-1 text-[12px] text-muted">{category.blurb}</p></div><span className="grid size-11 place-items-center border border-olive/30 text-olive transition-all group-hover:bg-olive group-hover:text-white"><ArrowRight className="size-4"/></span></div>
               </Link></Reveal>
             })}
           </div>
@@ -109,7 +103,7 @@ export function Home() {
       <section className="pt-24 sm:pt-32">
         <Container>
           <div className="grid items-stretch gap-px overflow-hidden bg-line md:grid-cols-[.88fr_1.12fr]">
-            <Reveal className="relative min-h-[390px] bg-blue-wash sm:min-h-[520px]"><PlaceholderArt label="botanički detalji" symbol="❧"/><span className="absolute right-7 top-7 font-display text-[18px] italic text-olive">Priroda, izbliza</span></Reveal>
+            <Reveal className="relative min-h-[390px] bg-blue-wash sm:min-h-[520px]"><img src="/images/products/sok-od-aronije.webp" alt="Sok od aronije sa jabukom — fotografija s dostavljene kolekcije" className="absolute inset-0 size-full object-cover" loading="lazy"/><span className="absolute right-7 top-7 bg-bg/85 px-3 py-2 font-display text-[18px] italic text-olive">Priroda, izbliza</span></Reveal>
             <Reveal delay={.12} className="flex min-h-[390px] flex-col justify-center bg-[#eff0e8] px-7 py-12 sm:px-12 lg:px-16">
               <p className="flex items-center gap-3 text-[10px] uppercase tracking-[.2em] text-olive"><FlaskConical className="size-4"/> Promišljena njega</p>
               <h2 className="font-display mt-6 max-w-[600px] text-[43px] leading-[.96] sm:text-[61px]">Priroda oblikovana znanjem, u vašoj svakodnevici.</h2>

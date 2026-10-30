@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router'
 
 import { Button, ButtonLink, Container, inputClass } from '../components/ui'
+import { useCatalog } from '../lib/catalog'
 import { money, useCart } from '../lib/cart'
 
 function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
@@ -11,13 +12,15 @@ function Field({ label, children, className }: { label: string; children: React.
 
 export function Checkout() {
   const cart = useCart()
+  const { loading: catalogLoading } = useCatalog()
   const navigate = useNavigate()
   const [form, setForm] = useState({ name: '', phone: '', city: '', address: '', note: '', email: '' })
   const [confirmed, setConfirmed] = useState(false)
   const [state, setState] = useState<'idle' | 'sending' | 'error'>('idle')
   const [error, setError] = useState('')
-  const catalogReady = cart.items.length > 0 && cart.items.every(item => item.product.available && item.product.price !== null && item.product.verificationStatus === 'verified')
+  const catalogReady = !catalogLoading && cart.items.length > 0 && cart.items.every(item => item.product.available && item.product.price !== null && item.product.verificationStatus === 'verified')
 
+  if (catalogLoading) return <Container className="pb-16 pt-16"><p className="font-display text-[30px]">Učitava se katalog…</p></Container>
   if (cart.items.length === 0) return <Navigate to="/shop" replace />
   const set = (key: keyof typeof form) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm({ ...form, [key]: event.target.value })
 
@@ -26,12 +29,13 @@ export function Checkout() {
     if (!confirmed || !catalogReady) return
     setState('sending'); setError('')
     try {
-      const response = await fetch('/api/orders', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ customer: form, items: cart.items.map((item) => ({ id: item.slug, quantity: item.quantity })), paymentMethod: 'pouzece' }) })
+      const response = await fetch('/api/orders', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ customer: form, items: cart.items.map((item) => ({ id: item.slug, quantity: item.quantity })), paymentMethod: 'pouzece' }) })
       const body = await response.json() as { reference?: string; error?: string; subtotal?: number }
       if (!response.ok || !body.reference) throw new Error(body.error ?? 'Narudžbu trenutno nije moguće sačuvati.')
       const summary = { reference: body.reference, customer: form, items: cart.items, subtotal: body.subtotal ?? cart.subtotal }
       cart.clear(); navigate(`/order/${body.reference}`, { state: summary })
     } catch (cause) { setState('error'); setError(cause instanceof Error ? cause.message : 'Narudžbu trenutno nije moguće poslati.') }
+    finally { setState(current => current === 'sending' ? 'idle' : current) }
   }
 
   return <Container className="pb-16 pt-10 sm:pt-14">

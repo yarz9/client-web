@@ -3,16 +3,17 @@ import { Menu, ShoppingBag, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router'
 
-import { categories } from '../../data/products'
+import { useCatalog } from '../lib/catalog'
 import { useCart } from '../lib/cart'
 import { cx } from '../lib/cx'
 
 export function Logo({ className }: { className?: string }) {
-  return <Link to="/" aria-label="BioHerbica — početna stranica" className={cx('inline-flex items-center gap-2.5', className)}><span className="relative grid size-8 place-items-center border border-olive/45 text-olive"><svg viewBox="0 0 30 30" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.1" aria-hidden="true"><path d="M15 25V9M15 16C8 16 7 11 7 8c5 0 8 3 8 8Zm0-3c0-6 3-9 8-10 0 5-2 9-8 11Z"/><path d="M10 25h10"/></svg></span><span><span className="block font-display text-[24px] leading-[.85] tracking-[-.04em]">BioHerbica</span><span className="mt-1 block text-[8px] uppercase tracking-[.23em] text-muted">Priroda oblikovana znanjem</span></span></Link>
+  return <Link to="/" aria-label="BioHerbica — početna stranica" className={cx('inline-flex items-center', className)}><img src="/brand/bioherbica-wordmark.webp" alt="BioHerbica — priroda oblikovana znanjem" className="h-12 w-auto max-w-[210px] object-contain sm:h-[58px] sm:max-w-[250px]" /></Link>
 }
 
 export function Nav() {
   const cart = useCart()
+  const { categories } = useCatalog()
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const location = useLocation()
@@ -23,7 +24,7 @@ export function Nav() {
   return <>
     <div className="flex min-h-8 items-center justify-center bg-olive-deep px-4 py-1.5 text-center text-[9px] uppercase tracking-[.17em] text-[#edf0e6] sm:text-[10px]">Prirodni proizvodi · Tuzla, Bosna i Hercegovina</div>
     <header className={cx('sticky top-0 z-40 border-b transition-all duration-300', scrolled ? 'border-line bg-bg/95 shadow-[0_5px_22px_-18px_rgba(37,44,36,.35)] backdrop-blur-md' : 'border-transparent bg-bg')}>
-      <div className="mx-auto grid h-[75px] max-w-[1360px] grid-cols-[1fr_auto_1fr] items-center px-4 sm:px-8 lg:px-12">
+      <div className="mx-auto grid h-[68px] max-w-[1360px] grid-cols-[1fr_auto_1fr] items-center px-4 sm:h-[75px] sm:px-8 lg:px-12">
         <button type="button" aria-label="Otvori meni" aria-expanded={open} onClick={() => setOpen(true)} className="grid size-10 place-items-center text-olive-deep lg:hidden"><Menu className="size-5"/></button>
         <nav aria-label="Glavna navigacija" className="hidden items-center gap-6 lg:flex">{[{ to: '/shop', label: 'Proizvodi' }, { to: '/about', label: 'O nama' }, { to: '/contact', label: 'Kontakt' }].map(link => <Link key={link.to} to={link.to} className="border-b border-transparent py-2 text-[11px] text-muted transition-colors hover:border-olive/50 hover:text-olive-deep">{link.label}</Link>)}</nav>
         <Logo className="justify-self-center"/>

@@ -6,7 +6,7 @@ import { Logo } from './Nav'
 
 const columns = [
   { title: 'Istražite', links: [['Svi proizvodi', '/shop'], ['Njega lica', '/shop?category=njega-lica'], ['Njega tijela', '/shop?category=njega-tijela'], ['Biljni preparati', '/shop?category=biljni-preparati']] },
-  { title: 'Informacije', links: [['O BioHerbici', '/about'], ['Kontakt', '/contact'], ['Privatnost — sadržaj čeka potvrdu', '/about'], ['Uslovi kupovine — čeka potvrdu', '/about']] },
+  { title: 'Informacije', links: [['O BioHerbici', '/about'], ['Kontakt', '/contact'], ['Privatnost — čeka potvrdu', '/policies'], ['Uslovi kupovine — čeka potvrdu', '/policies']] },
 ]
 
 export function Footer() {

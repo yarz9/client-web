@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 
-import { bySlug, type Product } from '../../data/products'
+import { useCatalog } from './catalog'
+import type { Product } from '../../data/products'
 
 export interface CartLine {
   slug: string
@@ -26,13 +27,12 @@ const KEY = 'bioherbica-cart'
 const MAX_QUANTITY = 50
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { products, loading: catalogLoading } = useCatalog()
+  const bySlug = (slug: string) => products.find(product => product.slug === slug)
   const [lines, setLines] = useState<CartLine[]>(() => {
     try {
       const raw = localStorage.getItem(KEY)
-      return raw ? (JSON.parse(raw) as CartLine[]).filter((line) => {
-        const product = bySlug(line.slug)
-        return Boolean(product?.available && product.price !== null && product.verificationStatus === 'verified' && Number.isInteger(line.quantity) && line.quantity > 0 && line.quantity <= MAX_QUANTITY)
-      }) : []
+      return raw ? (JSON.parse(raw) as CartLine[]).filter((line) => typeof line.slug === 'string' && (line.option === undefined || typeof line.option === 'string') && Number.isInteger(line.quantity) && line.quantity > 0 && line.quantity <= MAX_QUANTITY) : []
     } catch {
       return []
     }
@@ -40,8 +40,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
-    localStorage.setItem(KEY, JSON.stringify(lines))
-  }, [lines])
+    if (catalogLoading) return
+    setLines(current => current.filter(line => {        const product = products.find(item => item.slug === line.slug)
+        return Boolean(product?.available && product.price !== null && product.verificationStatus === 'verified')
+    }))
+  }, [catalogLoading, products])
+
+  useEffect(() => {
+    if (!catalogLoading) localStorage.setItem(KEY, JSON.stringify(lines))
+  }, [lines, catalogLoading])
 
   const same = (a: CartLine, slug: string, option?: string) => a.slug === slug && (a.option ?? '') === (option ?? '')
 
@@ -56,14 +63,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const setQuantity = useCallback((slug: string, option: string | undefined, quantity: number) => {
-    setLines((prev) => (quantity <= 0 ? prev.filter((l) => !same(l, slug, option)) : prev.map((l) => (same(l, slug, option) ? { ...l, quantity: Math.min(MAX_QUANTITY, Math.floor(quantity)) } : l))))
+    const nextQuantity = Math.floor(quantity)
+    setLines((prev) => (nextQuantity <= 0 ? prev.filter((l) => !same(l, slug, option)) : prev.map((l) => (same(l, slug, option) ? { ...l, quantity: Math.min(MAX_QUANTITY, nextQuantity) } : l))))
   }, [])
 
   const remove = useCallback((slug: string, option?: string) => setLines((prev) => prev.filter((l) => !same(l, slug, option))), [])
   const clear = useCallback(() => setLines([]), [])
 
   const value = useMemo<CartState>(() => {
-    const items = lines.map((line) => ({ ...line, product: bySlug(line.slug)! })).filter((line) => line.product.available && line.product.price !== null && line.product.verificationStatus === 'verified')
+    const items = lines.map((line) => ({ ...line, product: bySlug(line.slug) })).filter((line): line is CartLine & { product: Product } => Boolean(line.product?.available && line.product.price !== null && line.product.verificationStatus === 'verified'))
     return {
       lines,
       open,
@@ -76,7 +84,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       count: items.reduce((n, l) => n + l.quantity, 0),
       subtotal: items.reduce((n, l) => n + l.quantity * (l.product.price ?? 0), 0),
     }
-  }, [lines, open, add, setQuantity, remove, clear])
+  }, [lines, open, add, setQuantity, remove, clear, products])
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>
 }

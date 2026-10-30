@@ -6,12 +6,14 @@ import { CartDrawer } from './components/CartDrawer'
 import { Footer } from './components/Footer'
 import { Nav } from './components/Nav'
 import { CartProvider } from './lib/cart'
+import { CatalogProvider } from './lib/catalog'
 import { About } from './pages/About'
 import { Admin } from './pages/Admin'
 import { Checkout, OrderConfirmed } from './pages/Checkout'
 import { Home } from './pages/Home'
 import { Product } from './pages/Product'
 import { Shop } from './pages/Shop'
+import { Policies } from './pages/Policies'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -41,6 +43,7 @@ function Pages() {
           <Route path="order/:reference" element={<OrderConfirmed />} />
           <Route path="about" element={<About />} />
           <Route path="admin" element={<Admin />} />
+          <Route path="policies" element={<Policies />} />
           <Route path="contact" element={<About />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -52,6 +55,7 @@ function Pages() {
 export function App() {
   return (
     <BrowserRouter>
+      <CatalogProvider>
       <CartProvider>
         <ScrollToTop />
         <Nav />
@@ -59,6 +63,7 @@ export function App() {
         <Footer />
         <CartDrawer />
       </CartProvider>
+      </CatalogProvider>
     </BrowserRouter>
   )
 }

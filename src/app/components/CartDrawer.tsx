@@ -41,13 +41,13 @@ export function CartDrawer() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 40, opacity: 0 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-y-2 right-2 flex w-[calc(100%-16px)] max-w-[440px] flex-col rounded-dialog bg-bg shadow-drawer"
+            className="absolute inset-y-0 right-0 flex w-full max-w-[440px] flex-col rounded-none bg-bg shadow-drawer sm:inset-y-2 sm:right-2 sm:rounded-dialog"
           >
             <header className="flex h-16 items-center justify-between border-b border-line px-6">
               <h2 className="font-display text-[27px]">
                 Vaša korpa {cart.count > 0 && <span className="ml-1.5 font-sans text-[13px] text-muted">({cart.count})</span>}
               </h2>
-              <button type="button" aria-label="Close" onClick={() => cart.setOpen(false)} className="grid size-10 place-items-center rounded-control transition-colors hover:bg-surface-2">
+              <button type="button" aria-label="Zatvori korpu" onClick={() => cart.setOpen(false)} className="grid size-10 place-items-center rounded-control transition-colors hover:bg-surface-2">
                 <X className="size-5" />
               </button>
             </header>
@@ -101,7 +101,7 @@ export function CartDrawer() {
                                   −
                                 </button>
                                 <span className="text-center tabular-nums">{item.quantity}</span>
-                                <button type="button" aria-label="Povećaj količinu" onClick={() => cart.setQuantity(item.slug, item.option, item.quantity + 1)} className="h-full text-muted hover:text-fg">
+                                <button type="button" aria-label="Povećaj količinu" disabled={item.quantity >= 50} onClick={() => cart.setQuantity(item.slug, item.option, item.quantity + 1)} className="h-full text-muted hover:text-fg disabled:cursor-not-allowed disabled:opacity-40">
                                   +
                                 </button>
                               </div>
@@ -125,6 +125,7 @@ export function CartDrawer() {
                   <Button
                     size="lg"
                     className="mt-4 w-full"
+                    disabled={cart.items.length === 0}
                     onClick={() => {
                       cart.setOpen(false)
                       navigate('/checkout')
