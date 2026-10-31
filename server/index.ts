@@ -4,6 +4,7 @@ import { randomBytes, createHmac, timingSafeEqual } from 'node:crypto'
 import { readFile, stat } from 'node:fs/promises'
 import { dirname, extname, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { ensureSchema, type SeedCatalogue } from './schema.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -833,6 +834,22 @@ const server = http.createServer(async (request, response) => {
 })
 
 server.listen(port, '0.0.0.0', () => console.log(`BioHerbica listening on ${port}`))
+
+// A fresh Railway deploy starts with an empty database, so create the tables and add any
+// missing catalogue entries once at boot. Existing rows are never overwritten.
+async function prepareDatabase() {
+  if (!DATABASE_URL) return
+  try {
+    const seedUrl = new URL('../build/src/data/products.js', import.meta.url).href
+    const seed = await import(seedUrl) as SeedCatalogue
+    await ensureSchema(DATABASE_URL, { categories: seed.categories, products: seed.products })
+    console.log('Database schema ready.')
+  } catch (error) {
+    console.warn(`Database schema check skipped: ${error instanceof Error ? error.message : 'unknown error'}`)
+  }
+}
+
+void prepareDatabase()
 
 function validString(value: unknown, min: number, max: number): value is string {
   return typeof value === 'string' && value.trim().length >= min && value.trim().length <= max
