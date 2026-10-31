@@ -609,18 +609,18 @@ app.delete('/api/admin/products/:id', async (c) => {
 
 app.get('/api/categories', async (c) => {
   const db = c.var.db
-  const [rows] = await db.prepare('SELECT keyname AS key, label, blurb, number, sort_order AS sortOrder FROM categories ORDER BY sort_order ASC, keyname ASC').execute() as unknown as { key: string; label: string; blurb: string | null; number: string | null; sortOrder: number }[][]
+  const [rows] = await db.prepare('SELECT keyname AS `key`, label, blurb, number, sort_order AS sortOrder FROM categories ORDER BY sort_order ASC, keyname ASC').execute() as unknown as { key: string; label: string; blurb: string | null; number: string | null; sortOrder: number }[][]
   return c.json({ results: rows }, 200)
 })
 
 app.get('/api/policies', async (c) => {
-  const [rows] = await c.var.db.prepare('SELECT keyname AS key, title, content, sort_order AS sortOrder FROM store_policies ORDER BY sort_order ASC, keyname ASC').execute() as unknown as [{ key: string; title: string; content: string; sortOrder: number }[], unknown]
+  const [rows] = await c.var.db.prepare('SELECT keyname AS `key`, title, content, sort_order AS sortOrder FROM store_policies ORDER BY sort_order ASC, keyname ASC').execute() as unknown as [{ key: string; title: string; content: string; sortOrder: number }[], unknown]
   return c.json({ results: rows }, 200, { 'cache-control': 'public, max-age=60' })
 })
 
 app.get('/api/admin/policies', async (c) => {
   if (!adminFor(c)) return c.json({ error: 'Prijava nije odobrena.' }, 401, ADMIN_HEADERS)
-  const [rows] = await c.var.db.prepare('SELECT keyname AS key, title, content, sort_order AS sortOrder FROM store_policies ORDER BY sort_order ASC, keyname ASC').execute() as unknown as [{ key: string; title: string; content: string; sortOrder: number }[], unknown]
+  const [rows] = await c.var.db.prepare('SELECT keyname AS `key`, title, content, sort_order AS sortOrder FROM store_policies ORDER BY sort_order ASC, keyname ASC').execute() as unknown as [{ key: string; title: string; content: string; sortOrder: number }[], unknown]
   return c.json({ results: rows }, 200, ADMIN_HEADERS)
 })
 
