@@ -4,7 +4,7 @@ import { randomBytes, createHmac, timingSafeEqual } from 'node:crypto'
 import { readFile, stat } from 'node:fs/promises'
 import { dirname, extname, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { ensureSchema, type SeedCatalogue } from './schema.js'
+import { ensureSchema, type SeedCatalogue, type SetupReport } from './schema.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -238,10 +238,28 @@ app.get('/api/admin/products', async (c) => {
 app.get('/api/health', async (c) => {
   try {
     await c.var.db.query('SELECT 1')
-    return c.json({ ok: true, database: true })
+    return c.json({ ok: true, database: true, catalogue: setupState?.products ?? null })
   } catch {
     return c.json({ ok: false, database: false }, 503)
   }
+})
+
+// Owner-only view of the automatic setup so a failed step can be read without a shell.
+app.get('/api/admin/status', async (c) => {
+  if (!adminFor(c)) return c.json({ error: 'Prijava nije odobrena.' }, 401, ADMIN_HEADERS)
+  const db = c.var.db as unknown as SqlDb
+  const count = async (table: string) => {
+    try {
+      const [rows] = await db.query(`SELECT COUNT(*) AS count FROM ${table}`) as unknown as [{ count: number | string }[], unknown]
+      return Number(rows[0]?.count ?? 0)
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'unknown error' }
+    }
+  }
+  return c.json({
+    setup: setupState,
+    counts: { products: await count('products'), categories: await count('categories'), orders: await count('orders') },
+  }, 200, ADMIN_HEADERS)
 })
 
 app.post('/api/orders', async (c) => {
@@ -837,15 +855,24 @@ server.listen(port, '0.0.0.0', () => console.log(`BioHerbica listening on ${port
 
 // A fresh Railway deploy starts with an empty database, so create the tables and add any
 // missing catalogue entries once at boot. Existing rows are never overwritten.
+let setupState: SetupReport | { ok: false; products: 0; failures: { step: string; code: string; message: string }[] } | null = null
+
 async function prepareDatabase() {
-  if (!DATABASE_URL) return
+  if (!DATABASE_URL) {
+    console.warn('Database setup skipped: DATABASE_URL is not set.')
+    return
+  }
   try {
     const seedUrl = new URL('../build/src/data/products.js', import.meta.url).href
     const seed = await import(seedUrl) as SeedCatalogue
-    await ensureSchema(DATABASE_URL, { categories: seed.categories, products: seed.products })
-    console.log('Database schema ready.')
+    const report = await ensureSchema(DATABASE_URL, { categories: seed.categories, products: seed.products })
+    setupState = report
+    if (report.ok) console.log(`Database schema ready with ${report.products} catalogue entries.`)
+    else console.warn(`Database setup finished with ${report.failures.length} failed step(s): ${report.failures.map(failure => `${failure.step} (${failure.code})`).join(', ')}`)
   } catch (error) {
-    console.warn(`Database schema check skipped: ${error instanceof Error ? error.message : 'unknown error'}`)
+    const message = error instanceof Error ? error.message : 'unknown error'
+    setupState = { ok: false, products: 0, failures: [{ step: 'startup', code: 'import', message }] }
+    console.warn(`Database setup could not run: ${message}`)
   }
 }
 

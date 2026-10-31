@@ -12,3 +12,4 @@ build
 !/.env.example
 freebuff-realtime/.wrangler
 gh.exe
+server/*.js
