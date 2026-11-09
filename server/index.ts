@@ -406,13 +406,13 @@ app.patch('/api/admin/orders/:reference', async (c) => {
   }
 
   if (body.trackingCode !== undefined && body.trackingCode !== null && (typeof body.trackingCode !== 'string' || body.trackingCode.trim().length > 60)) {
-    return c.json({ error: 'Kod pracenja moze imati najvise 60 znakova.' }, 400)
+    return c.json({ error: 'Kod praćenja može imati najviše 60 znakova.' }, 400)
   }
 
   // mysql2 resolves execute() with [rows, fields]; the header has to be unpacked.
   const [existingRows] = await db.prepare('SELECT reference FROM orders WHERE reference = ?').execute([reference]) as unknown as [{ reference: string }[], unknown]
   if (!existingRows.length) {
-    return c.json({ error: 'Narudzba ' + reference + ' nije pronadena.' }, 404)
+    return c.json({ error: 'Narudžba ' + reference + ' nije pronađena.' }, 404)
   }
 
   if (body.deliveryCharge === undefined) {
@@ -434,12 +434,12 @@ app.delete('/api/admin/orders/:reference', async (c) => {
   if (!adminFor(c)) return c.json({ error: 'Prijava nije odobrena.' }, 401, ADMIN_HEADERS)
   const db = c.var.db as unknown as SqlDb
   const reference = c.req.param('reference')
-  if (!/^BH-[A-Z0-9]{8}$/.test(reference)) return c.json({ error: 'Referenca narudzbe nije validna.' }, 400)
+  if (!/^BH-[A-Z0-9]{8}$/.test(reference)) return c.json({ error: 'Referenca narudžbe nije validna.' }, 400)
 
   const [rows] = await db.prepare('SELECT status FROM orders WHERE reference = ?').execute([reference]) as unknown as [{ status: OrderStatus }[], unknown]
   const row = rows[0]
-  if (!row) return c.json({ error: 'Narudzba ' + reference + ' nije pronadena.' }, 404)
-  if (row.status !== 'Otkazano') return c.json({ error: 'Narudzbu ' + reference + ' mozete obrisati samo kada je otkazana.' }, 409)
+  if (!row) return c.json({ error: 'Narudžba ' + reference + ' nije pronađena.' }, 404)
+  if (row.status !== 'Otkazano') return c.json({ error: 'Narudžbu ' + reference + ' možete obrisati samo kada je otkazana.' }, 409)
 
   await db.prepare('DELETE FROM orders WHERE reference = ?').execute([reference])
   return c.json({ ok: true })
@@ -450,35 +450,35 @@ app.post('/api/admin/orders/:reference/email', async (c) => {
   if (!adminFor(c)) return c.json({ error: 'Prijava nije odobrena.' }, 401, ADMIN_HEADERS)
   const db = c.var.db as unknown as SqlDb
   const reference = c.req.param('reference')
-  if (!/^BH-[A-Z0-9]{8}$/.test(reference)) return c.json({ error: 'Referenca narudzbe nije validna.' }, 400)
+  if (!/^BH-[A-Z0-9]{8}$/.test(reference)) return c.json({ error: 'Referenca narudžbe nije validna.' }, 400)
 
   let body: { trackingCode?: unknown }
   try { body = await c.req.json() } catch { return c.json({ error: 'Podaci nisu ispravni.' }, 400) }
   const trackingCode = typeof body.trackingCode === 'string' ? body.trackingCode.trim() : ''
-  if (!trackingCode || trackingCode.length > 60) return c.json({ error: 'Unesite kod pracenja posiljke.' }, 400)
+  if (!trackingCode || trackingCode.length > 60) return c.json({ error: 'Unesite kod praćenja pošiljke.' }, 400)
 
   const [rows] = await db.prepare('SELECT CAST(customer_json AS CHAR) AS customerJson FROM orders WHERE reference = ?').execute([reference]) as unknown as [{ customerJson: string }[], unknown]
   const row = rows[0]
-  if (!row) return c.json({ error: 'Narudzba ' + reference + ' nije pronadena.' }, 404)
+  if (!row) return c.json({ error: 'Narudžba ' + reference + ' nije pronađena.' }, 404)
 
   let customer: { name?: string; email?: string } = {}
   try { customer = JSON.parse(row.customerJson) as typeof customer } catch { customer = {} }
   const email = (customer.email ?? '').trim()
-  if (!email) return c.json({ error: 'Narudzba ' + reference + ' nema email kupca.' }, 400)
+  if (!email) return c.json({ error: 'Narudžba ' + reference + ' nema email kupca.' }, 400)
 
   const apiKey = (process.env.RESEND_API_KEY ?? '').trim()
   const from = (process.env.ORDER_EMAIL_FROM ?? '').trim()
   if (!apiKey || !from) {
-    return c.json({ error: 'Slanje emaila nije podeseno. Postavite RESEND_API_KEY i ORDER_EMAIL_FROM na Railway servisu.' }, 503)
+    return c.json({ error: 'Slanje emaila nije podešeno. Postavite RESEND_API_KEY i ORDER_EMAIL_FROM na Railway servisu.' }, 503)
   }
 
   const text = [
-    'Postovani ' + (customer.name ?? 'kupce') + ',',
+    'Poštovani ' + (customer.name ?? 'kupce') + ',',
     '',
-    'Vasa narudzba ' + reference + ' je predata posti.',
-    'Kod za pracenje posiljke: ' + trackingCode,
+    'Vaša narudžba ' + reference + ' je predata pošti.',
+    'Kod za praćenje pošiljke: ' + trackingCode,
     '',
-    'Status narudzbe: ' + baseUrlFor(c) + '/track',
+    'Status narudžbe: ' + baseUrlFor(c) + '/track',
     '',
     'BioHerbica',
   ].join('\n')
@@ -488,7 +488,7 @@ app.post('/api/admin/orders/:reference/email', async (c) => {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { authorization: 'Bearer ' + apiKey, 'content-type': 'application/json' },
-      body: JSON.stringify({ from, to: [email], subject: 'BioHerbica - pracenje narudzbe ' + reference, text }),
+      body: JSON.stringify({ from, to: [email], subject: 'BioHerbica — praćenje narudžbe ' + reference, text }),
     })
     delivered = response.ok
     if (!delivered) console.error('Resend rejected the tracking email:', response.status, await response.text().catch(() => ''))
@@ -496,7 +496,7 @@ app.post('/api/admin/orders/:reference/email', async (c) => {
     console.error('Tracking email failed:', error instanceof Error ? error.message : error)
   }
 
-  if (!delivered) return c.json({ error: 'Email nije poslan. Provjerite RESEND_API_KEY i adresu posiljaoca.' }, 502)
+  if (!delivered) return c.json({ error: 'Email nije poslan. Provjerite RESEND_API_KEY i adresu pošiljaoca.' }, 502)
 
   const sentAt = new Date().toISOString()
   await db.prepare('UPDATE orders SET tracking_code = ?, tracking_sent_at = ? WHERE reference = ?').execute([trackingCode, sentAt, reference])
