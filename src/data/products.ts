@@ -270,8 +270,47 @@ const cajSmirenjeDetails = [
   'Prirodno bez kofeina; bez dodatnih aroma.',
 ]
 
+const cleansingFoamDescription = `Opis proizvoda
+
+Nježni gel za čišćenje lica namijenjen je svakodnevnom uklanjanju nečistoća, viška sebuma i ostataka šminke. Njegova blaga formulacija kombinuje biljne sastojke i hidratantne aktivne komponente koje čiste kožu bez nepotrebnog isušivanja.
+
+Sadrži glicerin koji pomaže u očuvanju prirodne vlažnosti kože te D-pantenol (provitamin B5), poznat po svojim umirujućim i njegujućim svojstvima. Blagi biljni tenzidi Coco Glucoside, Decyl Glucoside i Cocamidopropyl Betaine stvaraju nježnu pjenu koja učinkovito uklanja nečistoće, višak masnoće i ostatke proizvoda s kože.
+
+Formulacija obogaćena hidrolatom kamilice i lavande pruža dodatnu njegu, dok eterično ulje lavande i kamilice upotpunjuje proizvod nježnim biljnim mirisom.
+
+Zahvaljujući uravnoteženoj kombinaciji sastojaka, gel ostavlja kožu čistom, mekom, svježom i ugodnom na dodir. Pogodan je za svakodnevnu rutinu njege lica.
+
+Prednosti proizvoda:
+
+• Nježno uklanja nečistoće i višak sebuma.
+• Pomaže u očuvanju prirodne vlažnosti kože.
+• Glicerin doprinosi hidrataciji kože.
+• D-pantenol njeguje i umiruje kožu.
+• Blagi biljni tenzidi omogućavaju učinkovito čišćenje.
+• Ne ostavlja osjećaj zatezanja i suhoće kada je pravilno formuliran.
+• Pogodan za svakodnevnu upotrebu.
+
+Aktivni sastojci:
+
+• Glicerin: Humektans koji privlači i zadržava vlagu u koži.
+• D-pantenol: Provitamin B5 koji doprinosi hidrataciji, umirivanju i njezi kože.
+• Hidrolat kamilice/lavande: Biljna vodena faza koja upotpunjuje formulaciju.
+• Coco Glucoside, Decyl Glucoside i Cocamidopropyl Betaine: Blagi sastojci za čišćenje koji uklanjaju nečistoće i višak sebuma.
+
+Sastav (INCI): Aqua (ili Chamomilla Recutita Flower Water / Lavandula Angustifolia Flower Water), Glycerin, Panthenol, Coco-Glucoside, Decyl Glucoside, Cocamidopropyl Betaine, konzervans, Lavandula Angustifolia Oil ili Chamomilla Recutita Oil, Citric Acid ili Lactic Acid.
+
+Način upotrebe: Nanijeti malu količinu gela na vlažno lice, nježno umasirati kružnim pokretima, a zatim temeljito isprati mlakom vodom. Koristiti ujutro i navečer.
+
+Pakovanje: Prema odabranoj ambalaži.`
+
+const cleansingFoamDetails = [
+  'Sastav (INCI): Aqua (ili Chamomilla Recutita Flower Water / Lavandula Angustifolia Flower Water), Glycerin, Panthenol, Coco-Glucoside, Decyl Glucoside, Cocamidopropyl Betaine, konzervans, Lavandula Angustifolia Oil ili Chamomilla Recutita Oil, Citric Acid ili Lactic Acid.',
+  'Način upotrebe: nanijeti malu količinu na vlažno lice, nježno umasirati kružnim pokretima, temeljito isprati mlakom vodom; koristiti ujutro i navečer.',
+  'Pakovanje: prema odabranoj ambalaži — 15 KM.',
+  'Samo za vanjsku upotrebu; izbjegavati kontakt s očima. U slučaju iritacije prestati s upotrebom.',
+]
+
 // Development references only. Historical amounts are kept separate from live prices.
-// Nothing is purchasable until the owner confirms the full product listing.
 export const products: Product[] = [
   { slug: 'q10-nar-divlja-ruza', name: 'Q10 anti-age krema — nar i divlja ruža', price: null, referencePrice: 30, size: '50 g (ranije navedeno)', category: 'njega-lica', image: '/images/products/q10-nar-divlja-ruza.webp', short: 'Ranije objavljena cijena nije potvrđena', description: 'Razvojna stavka iz ranije javne objave. Aktuelni opis, cijena, sastav, dostupnost i klasifikacija čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false, featured: true },
   { slug: 'krema-mjesovita-masna-koza', name: 'Krema za mješovitu i masnu kožu', price: null, referencePrice: 25, category: 'njega-lica', image: '/images/products/krema-mjesovita-masna-koza.webp', short: 'Cijena iz ranije objave čeka potvrdu', description: 'Razvojna stavka iz ranije javne objave. Aktuelni opis, cijena, sastav, dostupnost i klasifikacija čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false, featured: true },
@@ -282,7 +321,7 @@ export const products: Product[] = [
   { slug: 'piling-za-tijelo', name: 'Piling za tijelo', price: null, category: 'njega-tijela', image: '/images/products/piling-za-tijelo.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Opis, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
   { slug: 'hair-repair-cream', name: 'Hair Repair Cream', price: null, category: 'njega-kose', image: '/images/products/hair-repair-cream.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Opis, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
   { slug: 'sebo-balance', name: 'Sebo Balance', price: null, category: 'njega-lica', image: '/images/products/sebo-balance.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Opis, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
-  { slug: 'cleansing-foam', name: 'Cleansing Foam', price: null, category: 'njega-lica', image: '/images/products/cleansing-foam.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Opis, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
+  { slug: 'cleansing-foam', name: 'Cleansing Foam (Pantenol)', price: 15, category: 'njega-lica', image: '/images/products/cleansing-foam.webp', short: 'Nježni gel za čišćenje lica sa D-pantenolom i glicerinom', description: cleansingFoamDescription, details: cleansingFoamDetails, verificationStatus: 'verified', available: true },
   { slug: 'prirodni-dezodorans', name: 'Prirodni dezodorans', price: null, category: 'njega-tijela', image: '/images/products/prirodni-dezodorans.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Opis, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
   { slug: 'tonik-za-kosu', name: 'Tonik za kosu', price: null, category: 'njega-kose', image: '/images/products/tonik-za-kosu.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Opis, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
   { slug: 'sampon-za-rast-kose', name: 'Šampon za rast kose', price: null, category: 'njega-kose', image: '/images/products/sampon-za-rast-kose.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Opis, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice. Naziv ne predstavlja potvrđenu tvrdnju o djelovanju proizvoda.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
