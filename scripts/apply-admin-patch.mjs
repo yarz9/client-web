@@ -201,12 +201,11 @@ dashboard = replaceOnce(
   'dashboard: uvoz komponente'
 )
 
-dashboard = replaceOnce(
-  dashboard,
-  "const statuses: Status[] = ['Novo', 'Potvrdeno', 'U pripremi', 'Poslano', 'Isporuceno', 'Otkazano']",
-  '',
-  'dashboard: uklanjanje liste statusa'
-)
+const statusStart = dashboard.indexOf('const statuses: Status[] = [')
+if (statusStart === -1) throw new Error('dashboard: lista statusa nije pronadena')
+const statusEnd = dashboard.indexOf('\n', statusStart)
+if (statusEnd === -1 || !dashboard.slice(statusStart, statusEnd).includes('Otkazano')) throw new Error('dashboard: lista statusa nije prepoznata')
+dashboard = dashboard.slice(0, statusStart) + dashboard.slice(statusEnd + 1)
 
 dashboard = cutSection(
   dashboard,
