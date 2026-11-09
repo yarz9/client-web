@@ -3,7 +3,7 @@ import { ShoppingBag, X } from 'lucide-react'
 import { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router'
 
-import { money, useCart } from '../lib/cart'
+import { linePrice, money, useCart } from '../lib/cart'
 import { Button } from './ui'
 
 export function CartDrawer() {
@@ -74,7 +74,9 @@ export function CartDrawer() {
 
                 <ul className="flex-1 divide-y divide-line overflow-y-auto px-6 py-2">
                   <AnimatePresence initial={false}>
-                    {cart.items.map((item) => (
+                    {cart.items.map((item) => {
+                      const unitPrice = linePrice(item.product, item.option)
+                      return (
                       <motion.li
                         key={`${item.slug}-${item.option ?? ''}`}
                         layout
@@ -93,7 +95,7 @@ export function CartDrawer() {
                                 <p className="truncate text-[15px] font-medium">{item.product.name}</p>
                                 {item.option && <p className="text-[13px] text-muted">{item.option}</p>}
                               </div>
-                              <p className="shrink-0 tabular-nums">{item.product.price !== null ? money(item.product.price * item.quantity) : 'Cijena čeka potvrdu'}</p>
+                              <p className="shrink-0 tabular-nums">{unitPrice !== null ? money(unitPrice * item.quantity) : 'Cijena čeka potvrdu'}</p>
                             </div>
                             <div className="mt-auto flex items-center justify-between">
                               <div className="grid h-9 grid-cols-[36px_32px_36px] items-center rounded-[11px] border border-line-strong text-[14px]">
@@ -112,7 +114,8 @@ export function CartDrawer() {
                           </div>
                         </div>
                       </motion.li>
-                    ))}
+                      )
+                    })}
                   </AnimatePresence>
                 </ul>
 

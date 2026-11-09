@@ -26,6 +26,9 @@ const CartContext = createContext<CartState | null>(null)
 const KEY = 'bioherbica-cart'
 const MAX_QUANTITY = 50
 
+// A product sold in packagings is priced by the chosen one; everything else uses the product price.
+export const linePrice = (product: Product, option?: string) => product.options?.find(candidate => candidate.label === option)?.price ?? product.price
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const { products, loading: catalogLoading } = useCatalog()
   const bySlug = (slug: string) => products.find(product => product.slug === slug)
@@ -42,7 +45,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (catalogLoading) return
     setLines(current => current.filter(line => {        const product = products.find(item => item.slug === line.slug)
-        return Boolean(product?.available && product.price !== null && product.verificationStatus === 'verified')
+        const optionValid = !product?.options?.length || product.options.some(candidate => candidate.label === line.option)
+        return Boolean(product?.available && product.price !== null && product.verificationStatus === 'verified' && optionValid)
     }))
   }, [catalogLoading, products])
 
@@ -54,6 +58,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const add = useCallback((product: Product, option?: string, quantity = 1) => {
     if (!product.available || product.price === null || product.verificationStatus !== 'verified' || !Number.isInteger(quantity) || quantity < 1) return
+    if (product.options?.length && !product.options.some(candidate => candidate.label === option)) return
     setLines((prev) => {
       const existing = prev.find((l) => same(l, product.slug, option))
       if (existing) return prev.map((l) => (l === existing ? { ...l, quantity: Math.min(MAX_QUANTITY, l.quantity + quantity) } : l))
@@ -82,7 +87,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setOpen,
       items,
       count: items.reduce((n, l) => n + l.quantity, 0),
-      subtotal: items.reduce((n, l) => n + l.quantity * (l.product.price ?? 0), 0),
+      subtotal: items.reduce((n, l) => n + l.quantity * (linePrice(l.product, l.option) ?? 0), 0),
     }
   }, [lines, open, add, setQuantity, remove, clear, products])
 
