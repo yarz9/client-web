@@ -5,7 +5,6 @@ import { Link } from 'react-router'
 import { useCatalog } from '../lib/catalog'
 import { ProductCard } from '../components/ProductCard'
 import { ButtonLink, Container, Reveal, SectionTitle } from '../components/ui'
-
 const ease = [0.22, 1, 0.36, 1] as const
 
 const categoryScenes = [
@@ -30,7 +29,7 @@ export function Home() {
               </motion.p>
               <h1 className="font-display max-w-[850px] text-[clamp(4rem,9.2vw,8.8rem)] leading-[.82] tracking-[-.045em]">
                 <motion.span className="block" initial={{ y: '110%' }} animate={{ y: 0 }} transition={{ duration: .9, delay: .1, ease }}>Priroda,</motion.span>
-                <motion.span className="ml-[.32em] mt-[.12em] block italic text-olive" initial={{ y: '110%' }} animate={{ y: 0 }} transition={{ duration: .9, delay: .24, ease }}>blisko vama.</motion.span>
+                <motion.span className="ml-[.32em] mt-[.12em] block italic text-olive" initial={{ y: '110%' }} animate={{ y: 0 }} transition={{ duration: .9, delay: .24, ease }}>približena vama.</motion.span>
               </h1>
               <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7, delay: .46, ease }} className="mt-9 max-w-[430px] text-[16px] leading-[1.85] text-muted sm:ml-[13%] sm:text-[17px]">
                 Pažljivo osmišljeni prirodni proizvodi za njegu, male svakodnevne rituale i trenutke koji pripadaju samo vama.
