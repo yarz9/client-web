@@ -220,6 +220,38 @@ const maslackKapiDetails = [
   'Zbog tradicionalne primjene kod bubrega i izlučivanja tečnosti, osobe sa bubrežnim oboljenjima, žučnim kamencem ili one koje uzimaju lijekove za izlučivanje tečnosti trebaju se prije upotrebe posavjetovati s ljekarom.',
 ]
 
+const antireumatskiMelemDescription = `Ljekovitost i upotreba:
+
+Ova prirodna biljna krema sadrži pažljivo odabranu kombinaciju macerata gaveza, kantariona i nevena, obogaćenu pčelinjim voskom, shea maslacem i vitaminom E. Dodatak eteričnih ulja čempresa, ruzmarina, lavande, bora, bibera i zimzelena upotpunjuje formulaciju i pruža ugodan osjećaj tokom masaže.
+
+Macerat gaveza tradicionalno se koristi za njegu kože i masažu područja izloženih fizičkom naporu. Kantarionovo ulje poznato je po svojim umirujućim i njegujućim svojstvima, dok macerat nevena doprinosi njezi osjetljive, suhe i nadražene kože.
+
+Pčelinji vosak i shea maslac hrane i omekšavaju kožu, pomažu u očuvanju njene prirodne zaštitne barijere i ostavljaju je mekanom i glatkom. Vitamin E djeluje kao antioksidans i pomaže u zaštiti uljne faze proizvoda od oksidacije.
+
+Eterična ulja čempresa, ruzmarina, lavande, bora, bibera i zimzelena daju kremi karakterističnu biljnu aromu i čine je pogodnom za masažu nakon fizičkog napora.
+
+Krema je namijenjena za:
+
+• Masažu umornih i napetih mišića.
+• Njegu kože nakon fizičkog napora.
+• Masažu područja vrata, leđa, ramena, ruku i nogu.
+• Njegu suhe i grube kože.
+• Omekšavanje i zaštitu kože.
+• Aromatičnu masažu koja pruža osjećaj opuštanja.
+
+Sastav: Macerat korijena gaveza, macerat kantariona, macerat nevena, pčelinji vosak, shea maslac, eterično ulje čempresa, eterično ulje ruzmarina, eterično ulje lavande, eterično ulje bora, eterično ulje bibera, eterično ulje zimzelena i vitamin E.
+
+Način upotrebe: Nanijeti manju količinu kreme na željeno područje kože i nježno umasirati kružnim pokretima. Koristiti prema potrebi.
+
+Napomena: Samo za vanjsku upotrebu. Izbjegavati kontakt s očima, sluznicama i oštećenom kožom. Prije prve upotrebe preporučuje se testiranje na manjem području kože.`
+
+const antireumatskiMelemDetails = [
+  'Sastav: macerat korijena gaveza, macerat kantariona, macerat nevena, pčelinji vosak, shea maslac, eterična ulja čempresa, ruzmarina, lavande, bora, bibera i zimzelena, vitamin E.',
+  'Način upotrebe: nanijeti manju količinu na željeno područje kože i nježno umasirati kružnim pokretima; koristiti prema potrebi.',
+  'Samo za vanjsku upotrebu. Izbjegavati kontakt s očima, sluznicama i oštećenom kožom.',
+  'Prije prve upotrebe preporučuje se testiranje na manjem području kože.',
+]
+
 const cajSmirenjeDescription = `Biljni čaj od kamilice, matičnjaka, lipe, lavande, šipka i komorača. Nježan, blago cvjetan i prirodno aromatičan, s osvježavajućom voćnom notom šipka i blagom slatkoćom komorača. Idealan za trenutke opuštanja i uživanja u toploj šoljici čaja. ✨
 
 💜 Ukus: Nježna kamilica i lavanda, uz osvježavajuću voćnu notu šipka.
@@ -276,6 +308,7 @@ export const products: Product[] = [
   { slug: 'kapi-za-ciste-polipe-i-miome', name: 'Kapi za ciste, polipe i miome', price: 10, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljna tinktura za podršku ženskom reproduktivnom zdravlju', description: zenskeKapiDescription, details: zenskeKapiDetails, verificationStatus: 'verified', available: true },
   { slug: 'kapi-za-smirenje-i-nesanicu', name: 'Kapi za smirenje i nesanicu', price: 10, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljne kapi sa valerijanom, hmeljem i mentom', description: smirenjeKapiDescription, details: smirenjeKapiDetails, verificationStatus: 'verified', available: true },
   { slug: 'kapi-korijena-maslacka', name: 'Kapi korijena maslačka', price: 9, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljna tinktura od korijena maslačka (Taraxacum officinale)', description: maslackKapiDescription, details: maslackKapiDetails, verificationStatus: 'verified', available: true },
+  { slug: 'antireumatski-melem', name: 'Antireumatski melem', price: 25, category: 'biljni-preparati', image: '', short: 'Biljna krema sa maceratima gaveza, kantariona i nevena', description: antireumatskiMelemDescription, details: antireumatskiMelemDetails, verificationStatus: 'verified', available: true },
   { slug: 'pulmomed', name: 'PulmoMed – Biljni med za dišne puteve', price: 12, category: 'voca-i-med', image: '', short: 'Biljni med sa sladićem, bijelim sljezom, timijanom i polenom', description: pulmoMedDescription, details: pulmoMedDetails, options: [{ label: '250 g', price: 12 }, { label: '350 g', price: 17 }], verificationStatus: 'verified', available: true },
 ]
 
