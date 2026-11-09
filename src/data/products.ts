@@ -161,6 +161,35 @@ const zenskeKapiDetails = [
   'Kantarion može uticati na djelovanje nekih lijekova, uključujući hormonsku kontracepciju; prije upotrebe se posavjetujte s ljekarom.',
 ]
 
+const smirenjeKapiDescription = `Biljne kapi predstavljaju prirodnu kombinaciju valerijane, hmelja i mente, pažljivo odabranih zbog svoje tradicionalne primjene za opuštanje organizma i podršku kvalitetnom snu.
+
+Tinktura valerijane (odoljena) poznata je po svom umirujućem djelovanju te se tradicionalno koristi za ublažavanje nervoze, unutrašnjeg nemira i poteškoća s uspavljivanjem. Doprinosi opuštanju organizma i lakšem uspostavljanju mirnog sna.
+
+Tinktura hmelja tradicionalno se koristi kao biljni sastojak za opuštanje i smanjenje osjećaja napetosti i razdražljivosti. U kombinaciji s valerijanom doprinosi umirujućem djelovanju biljne formulacije.
+
+Tinktura mente (metvice) upotpunjuje ovu kombinaciju svojim osvježavajućim mirisom i ugodnim okusom. Tradicionalno se koristi za podršku probavi i doprinosi boljoj senzornoj prihvatljivosti proizvoda.
+
+Zahvaljujući kombinaciji valerijane i hmelja, ove biljne kapi namijenjene su osobama koje žele podržati opuštanje organizma, smanjiti osjećaj svakodnevne napetosti i poboljšati kvalitetu odmora.
+
+Sastav: Etanolno-vodeni ekstrakt sljedećih biljaka:
+
+• Valerijana – korijen (Valeriana officinalis)
+• Hmelj – šišarke (Humulus lupulus)
+• Menta – list (Mentha piperita)
+• Alkohol
+
+Način upotrebe: Prema preporučenoj dnevnoj dozi, razrijediti u malo vode.
+
+Pakovanje: 30 ml.`
+
+const smirenjeKapiDetails = [
+  'Sastav: etanolno-vodeni ekstrakt valerijane (korijen), hmelja (šišarke) i mente (list); alkohol.',
+  'Pakovanje: 30 ml — 10 KM.',
+  'Način upotrebe: prema preporučenoj dnevnoj dozi, razrijediti u malo vode.',
+  'Sadrži alkohol; nije namijenjeno djeci, trudnicama i dojiljama.',
+  'Može izazvati pospanost; ne upravljajte vozilom i ne kombinujte s lijekovima za smirenje ili uspavljivanje bez savjeta ljekara.',
+]
+
 // Development references only. Historical amounts are kept separate from live prices.
 // Nothing is purchasable until the owner confirms the full product listing.
 export const products: Product[] = [
@@ -196,6 +225,7 @@ export const products: Product[] = [
   { slug: 'detox-kapi', name: 'Detox kapi – Podrška metabolizmu i probavi', price: 10, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljna tinktura za podršku probavi i metabolizmu', description: detoxKapiDescription, details: detoxKapiDetails, verificationStatus: 'verified', available: true },
   { slug: 'kapi-za-holesterol', name: 'Kapi za holesterol', price: 10, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljne kapi sa maslačkom, artičokom, cikorijom, đumbirom i maslinom', description: kolesterolKapiDescription, details: kolesterolKapiDetails, verificationStatus: 'verified', available: true },
   { slug: 'kapi-za-ciste-polipe-i-miome', name: 'Kapi za ciste, polipe i miome', price: 10, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljna tinktura za podršku ženskom reproduktivnom zdravlju', description: zenskeKapiDescription, details: zenskeKapiDetails, verificationStatus: 'verified', available: true },
+  { slug: 'kapi-za-smirenje-i-nesanicu', name: 'Kapi za smirenje i nesanicu', price: 10, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljne kapi sa valerijanom, hmeljem i mentom', description: smirenjeKapiDescription, details: smirenjeKapiDetails, verificationStatus: 'verified', available: true },
   { slug: 'pulmomed', name: 'PulmoMed – Biljni med za dišne puteve', price: 12, category: 'voca-i-med', image: '', short: 'Biljni med sa sladićem, bijelim sljezom, timijanom i polenom', description: pulmoMedDescription, details: pulmoMedDetails, options: [{ label: '250 g', price: 12 }, { label: '350 g', price: 17 }], verificationStatus: 'verified', available: true },
 ]
 
