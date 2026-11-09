@@ -8,7 +8,7 @@ import { Nav } from './components/Nav'
 import { CartProvider } from './lib/cart'
 import { CatalogProvider } from './lib/catalog'
 import { About } from './pages/About'
-import { Admin } from './pages/Admin'
+import { AdminDashboard } from './pages/AdminDashboard'
 import { Checkout, OrderConfirmed } from './pages/Checkout'
 import { Home } from './pages/Home'
 import { Product } from './pages/Product'
@@ -42,7 +42,7 @@ function Pages() {
           <Route path="checkout" element={<Checkout />} />
           <Route path="order/:reference" element={<OrderConfirmed />} />
           <Route path="about" element={<About />} />
-          <Route path="admin" element={<Admin />} />
+          <Route path="admin" element={<AdminDashboard />} />
           <Route path="policies" element={<Policies />} />
           <Route path="contact" element={<About />} />
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -56,13 +56,13 @@ export function App() {
   return (
     <BrowserRouter>
       <CatalogProvider>
-      <CartProvider>
-        <ScrollToTop />
-        <Nav />
-        <Pages />
-        <Footer />
-        <CartDrawer />
-      </CartProvider>
+        <CartProvider>
+          <ScrollToTop />
+          <Nav />
+          <Pages />
+          <Footer />
+          <CartDrawer />
+        </CartProvider>
       </CatalogProvider>
     </BrowserRouter>
   )
