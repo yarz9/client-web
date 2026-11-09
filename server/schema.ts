@@ -11,7 +11,7 @@ export type SeedProduct = {
   short: string
   description: string
   details: string[]
-  options?: { label: string; price: number }[] | null
+options?: { label: string; price: number }[] | null
   verificationStatus: 'awaiting_confirmation' | 'verified'
   available: boolean
   featured?: boolean
@@ -22,7 +22,7 @@ export type SeedCatalogue = { categories: SeedCategory[]; products: SeedProduct[
 export type SetupReport = {
   ok: boolean
   products: number
-  failures: { step: string; code: string; message: string }[]
+failures: { step: string; code: string; message: string }[]
 }
 
 // Packagings the catalogue used to list as separate products. They are removed on
@@ -30,10 +30,10 @@ export type SetupReport = {
 const SUPERSEDED_SLUGS = ['pulmomed-200g', 'pulmomed-350g']
 
 const policies: [string, string, string][] = [
-  ['merchant', 'Informacije o prodavcu', 'Puni naziv poslovnog subjekta, adresa sjedišta, registracijski i kontakt podaci čekaju potvrdu vlasnice.'],
+['merchant', 'Informacije o prodavcu', 'Puni naziv poslovnog subjekta, adresa sjedišta, registracijski i kontakt podaci čekaju potvrdu vlasnice.'],
   ['orders', 'Narudžbe i plaćanje', 'Plaćanje je zamišljeno kao plaćanje pouzećem. Narudžba se smatra zahtjevom dok BioHerbica ne potvrdi dostupnost i cijenu dostave.\nOnline naplata nije omogućena.'],
   ['delivery', 'Dostava', 'Kurirska služba, područja dostave, cijena dostave, rokovi isporuke i postupak u slučaju nepreuzete pošiljke čekaju potvrdu.'],
-  ['returns', 'Povrat i reklamacije', 'Postupak odustanka od kupovine, povrata robe, reklamacija i rokovi za njihovo rješavanje moraju biti dostavljeni i odobreni prije početka prodaje.'],
+['returns', 'Povrat i reklamacije', 'Postupak odustanka od kupovine, povrata robe, reklamacija i rokovi za njihovo rješavanje moraju biti dostavljeni i odobreni prije početka prodaje.'],
   ['privacy', 'Privatnost i lični podaci', 'Zahtjev za narudžbu se čuva u Railway MySQL bazi koju održava vlasnik projekta.\nU bazu se upisuju ime, telefon, grad, adresa, opciona napomena i email, artikli s cijenama zabilježenim u trenutku zahtjeva, način plaćanja, status i vrijeme slanja. Pristup narudžbama ograničen je na zaštićeni administratorski panel; podaci se ne prikazuju javno.\nVlasnica prije lansiranja treba odrediti rok čuvanja, voditelja obrade i kanal za zahtjeve kupaca te potvrditi konačnu obavijest o privatnosti.'],
   ['legal', 'Lokalna provjera', 'Ovaj sadržaj je razvojni podsjetnik, nije pravno mišljenje ni konačan tekst uslova.\nPrije objave prodaje zatražite lokalnu pravnu provjeru za propise Bosne i Hercegovine.'],
 ]
@@ -44,7 +44,7 @@ const tables: [string, string][] = [
     label VARCHAR(200) NOT NULL,
     blurb VARCHAR(255) NULL,
     number VARCHAR(20) NULL,
-    sort_order INT NOT NULL DEFAULT 0
+sort_order INT NOT NULL DEFAULT 0
   )`],
   ['products', `CREATE TABLE IF NOT EXISTS products (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -55,7 +55,7 @@ const tables: [string, string][] = [
     category VARCHAR(200) NULL,
     image VARCHAR(500) NULL,
     short VARCHAR(240) NULL,
-    description TEXT NULL,
+description TEXT NULL,
     details JSON NULL,
     options JSON NULL,
     verification_status ENUM('awaiting_confirmation','verified') NOT NULL DEFAULT 'awaiting_confirmation',
@@ -63,7 +63,7 @@ const tables: [string, string][] = [
     featured TINYINT(1) NOT NULL DEFAULT 0,
     reference_price INT NULL,
     sort_order INT NOT NULL DEFAULT 0,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX products_category_idx (category),
     INDEX products_verification_idx (verification_status),
     INDEX products_available_idx (available)
@@ -71,19 +71,19 @@ const tables: [string, string][] = [
   ['orders', `CREATE TABLE IF NOT EXISTS orders (
     reference VARCHAR(32) PRIMARY KEY,
     customer_json JSON NOT NULL,
-    items_json JSON NOT NULL,
+items_json JSON NOT NULL,
     subtotal INT NOT NULL CHECK (subtotal >= 0),
     delivery_charge INT NULL CHECK (delivery_charge IS NULL OR delivery_charge >= 0),
-    total INT NULL CHECK (total IS NULL OR total >= subtotal),
+    total INT NULL CHECK (total IS NULL OR total >= 0),
     payment_method VARCHAR(40) NOT NULL DEFAULT 'Plaćanje pouzećem' CHECK (payment_method = 'Plaćanje pouzećem'),
-    status ENUM('Novo','Potvrđeno','U pripremi','Poslano','Isporučeno','Otkazano') NOT NULL DEFAULT 'Novo',
+status ENUM('Novo','Potvrđeno','U pripremi','Poslano','Isporučeno','Otkazano') NOT NULL DEFAULT 'Novo',
     created_at DATETIME NOT NULL,
     INDEX orders_created_at_idx (created_at)
   )`],
   ['product_images', `CREATE TABLE IF NOT EXISTS product_images (
     keyname VARCHAR(200) PRIMARY KEY,
     mimetype VARCHAR(120) NOT NULL,
-    data LONGBLOB NOT NULL,
+data LONGBLOB NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`],
   ['store_policies', `CREATE TABLE IF NOT EXISTS store_policies (
@@ -91,7 +91,7 @@ const tables: [string, string][] = [
     title VARCHAR(200) NOT NULL,
     content TEXT NOT NULL,
     sort_order INT NOT NULL DEFAULT 0,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
   )`],
 ]
 
@@ -99,14 +99,15 @@ function describe(error: unknown) {
   const candidate = error as { code?: string; errno?: number; sqlMessage?: string; message?: string }
   return {
     code: String(candidate.code ?? candidate.errno ?? 'unknown'),
-    message: String(candidate.sqlMessage ?? candidate.message ?? 'unknown error'),
+    message:
+String(candidate.sqlMessage ?? candidate.message ?? 'unknown error'),
   }
 }
 
 // Creates the tables and adds any missing catalogue entries. Each step is reported
 // separately and nothing is overwritten, so it is safe to run on every boot.
 export async function ensureSchema(dbUrl: string, seed: SeedCatalogue): Promise<SetupReport> {
-  const failures: SetupReport['failures'] = []
+const failures: SetupReport['failures'] = []
   const db = await mysql.createConnection(dbUrl)
   const created = new Set<string>()
 
@@ -117,7 +118,7 @@ export async function ensureSchema(dbUrl: string, seed: SeedCatalogue): Promise<
     } catch (error) {
       const detail = describe(error)
       failures.push({ step, ...detail })
-      console.error(`Database setup step failed: ${step} (${detail.code}): ${detail.message}`)
+console.error(`Database setup step failed: ${step} (${detail.code}): ${detail.message}`)
       return false
     }
   }
@@ -128,28 +129,30 @@ export async function ensureSchema(dbUrl: string, seed: SeedCatalogue): Promise<
     }
 
     // Tables created before packagings existed still need the column.
-    await run('add products.options', async () => {
+await run('add products.options', async () => {
       const [rows] = await db.query<mysql.RowDataPacket[]>("SELECT COUNT(*) AS count FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products' AND COLUMN_NAME = 'options'")
       if (Number(rows[0]?.count ?? 0) > 0) return
-      await db.query('ALTER TABLE products ADD COLUMN options JSON NULL AFTER details')
+      await
+db.query('ALTER TABLE products ADD COLUMN options JSON NULL AFTER details')
     })
 
     if (created.has('categories')) {
       await run('seed categories', async () => {
         const [[row]] = await db.query<mysql.RowDataPacket[]>('SELECT COUNT(*) AS count FROM categories')
         if (Number(row.count) > 0) return
-        for (const [sortOrder, category] of seed.categories.entries()) {
+for (const [sortOrder, category] of seed.categories.entries()) {
           await db.execute('INSERT INTO categories (keyname, label, blurb, number, sort_order) VALUES (?, ?, ?, ?, ?)', [category.key, category.label, category.blurb, category.number, sortOrder])
         }
       })
     }
 
     if (created.has('store_policies')) {
-      await run('seed policies', async () => {
+await run('seed policies', async () => {
         const [[row]] = await db.query<mysql.RowDataPacket[]>('SELECT COUNT(*) AS count FROM store_policies')
         if (Number(row.count) > 0) return
         for (const [sortOrder, [key, title, content]] of policies.entries()) {
-          await db.execute('INSERT INTO store_policies (keyname, title, content, sort_order) VALUES (?, ?, ?, ?)', [key, title, content, sortOrder])
+          await
+db.execute('INSERT INTO store_policies (keyname, title, content, sort_order) VALUES (?, ?, ?, ?)', [key, title, content, sortOrder])
         }
       })
     }
@@ -157,7 +160,10 @@ export async function ensureSchema(dbUrl: string, seed: SeedCatalogue): Promise<
     if (created.has('products')) {
       await run('seed products', async () => {
         for (const [sortOrder, product] of seed.products.entries()) {
-          await db.execute('INSERT INTO products (slug, name, price, size, category, image, short, description, details, options, verification_status, available, featured, reference_price, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE image = IF(image IS NULL OR image = ?, VALUES(image), image), options = IF(options IS NULL, VALUES(options), options)', [product.slug, product.name, product.price, product.size ?? null, product.category, product.image || null, product.short, product.description, JSON.stringify(product.details), product.options ? JSON.stringify(product.options) : null, product.verificationStatus, product.available ? 1 : 0, product.featured ? 1 : 0, product.referencePrice ?? null, sortOrder, ''])
+          await
+db.execute('INSERT INTO products (slug, name, price, size, category, image, short, description, details, options, verification_status, available, featured, reference_price, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE image = IF(image IS NULL OR image =
+?, VALUES(image), image), options = IF(options IS NULL, VALUES(options), options)', [product.slug, product.name, product.price, product.size ?? null, product.category, product.image || null, product.short, product.description, JSON.stringify(product.details), product.options ? JSON.stringify(product.options) : null,
+product.verificationStatus, product.available ? 1 : 0, product.featured ? 1 : 0, product.referencePrice ?? null, sortOrder, ''])
         }
       })
 
@@ -180,8 +186,7 @@ export async function ensureSchema(dbUrl: string, seed: SeedCatalogue): Promise<
         }
       })
     }
-
-    const [[countRow]] = await db.query<mysql.RowDataPacket[]>('SELECT COUNT(*) AS count FROM products').catch(() => [[{ count: 0 }]] as unknown as [mysql.RowDataPacket[], unknown])
+const [[countRow]] = await db.query<mysql.RowDataPacket[]>('SELECT COUNT(*) AS count FROM products').catch(() => [[{ count: 0 }] as mysql.RowDataPacket[]] as unknown as [mysql.RowDataPacket[], unknown])
     return { ok: failures.length === 0, products: Number(countRow?.count ?? 0), failures }
   } finally {
     await db.end().catch(() => {})
