@@ -190,6 +190,24 @@ const smirenjeKapiDetails = [
   'Može izazvati pospanost; ne upravljajte vozilom i ne kombinujte s lijekovima za smirenje ili uspavljivanje bez savjeta ljekara.',
 ]
 
+const cajSmirenjeDescription = `Biljni čaj od kamilice, matičnjaka, lipe, lavande, šipka i komorača. Nježan, blago cvjetan i prirodno aromatičan, s osvježavajućom voćnom notom šipka i blagom slatkoćom komorača. Idealan za trenutke opuštanja i uživanja u toploj šoljici čaja. ✨
+
+💜 Ukus: Nježna kamilica i lavanda, uz osvježavajuću voćnu notu šipka.
+
+🌙 Kofein: Prirodno bez kofeina.
+
+🌡️ Priprema: 100 °C, 5–10 minuta.
+
+🍃 Sastav: Kamilica, matičnjak, lipa, lavanda, šipak (plod) i komorač.
+
+☕ Posebnost: Pažljivo odabrana kombinacija šest biljaka, bez dodatnih aroma.`
+
+const cajSmirenjeDetails = [
+  'Sastav: kamilica, matičnjak, lipa, lavanda, šipak (plod) i komorač.',
+  'Priprema: 100 °C, 5–10 minuta.',
+  'Prirodno bez kofeina; bez dodatnih aroma.',
+]
+
 // Development references only. Historical amounts are kept separate from live prices.
 // Nothing is purchasable until the owner confirms the full product listing.
 export const products: Product[] = [
@@ -222,6 +240,7 @@ export const products: Product[] = [
   { slug: 'vocni-eliksir', name: 'Voćni eliksir', price: null, category: 'voca-i-med', image: '/images/products/vocni-eliksir.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Sastav, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
   { slug: 'zlatna-snaga', name: 'Zlatna snaga', price: null, category: 'voca-i-med', image: '/images/products/zlatna-snaga.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Sastav, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
   { slug: 'sok-od-aronije', name: 'Sok od aronije sa jabukom', price: null, category: 'voca-i-med', image: '/images/products/sok-od-aronije.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Sastav, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
+  { slug: 'caj-za-smirenje', name: 'Čaj za smirenje', price: 5, category: 'cajevi', image: '', short: 'Biljni čaj od kamilice, matičnjaka, lipe, lavande, šipka i komorača', description: cajSmirenjeDescription, details: cajSmirenjeDetails, verificationStatus: 'verified', available: true },
   { slug: 'detox-kapi', name: 'Detox kapi – Podrška metabolizmu i probavi', price: 10, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljna tinktura za podršku probavi i metabolizmu', description: detoxKapiDescription, details: detoxKapiDetails, verificationStatus: 'verified', available: true },
   { slug: 'kapi-za-holesterol', name: 'Kapi za holesterol', price: 10, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljne kapi sa maslačkom, artičokom, cikorijom, đumbirom i maslinom', description: kolesterolKapiDescription, details: kolesterolKapiDetails, verificationStatus: 'verified', available: true },
   { slug: 'kapi-za-ciste-polipe-i-miome', name: 'Kapi za ciste, polipe i miome', price: 10, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljna tinktura za podršku ženskom reproduktivnom zdravlju', description: zenskeKapiDescription, details: zenskeKapiDetails, verificationStatus: 'verified', available: true },
