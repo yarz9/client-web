@@ -20,6 +20,7 @@ const columns = [
     links: [
       ['O BioHerbici', '/about'],
       ['Kontakt', '/contact'],
+      ['Praćenje narudžbe', '/track'],
       ['Uslovi prodaje', '/policies#orders'],
       ['Politika privatnosti', '/policies#privacy'],
       ['Kolačići i lokalna pohrana', '/policies#privacy'],
