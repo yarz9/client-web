@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
-import { Navigate, useLocation, useParams } from 'react-router'
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router'
 
 import { OrderSentDialog } from '../components/OrderSentDialog'
 import { Button, ButtonLink, Container, inputClass } from '../components/ui'
@@ -25,15 +25,13 @@ type OrderSummaryState = {
 export function Checkout() {
   const cart = useCart()
   const { loading: catalogLoading } = useCatalog()
+  const navigate = useNavigate()
   const [form, setForm] = useState({ name: '', phone: '', city: '', address: '', note: '', email: '' })
   const [confirmed, setConfirmed] = useState(false)
   const [state, setState] = useState<'idle' | 'sending' | 'error'>('idle')
   const [error, setError] = useState('')
-  const [sent, setSent] = useState<{ reference: string } | null>(null)
   const catalogReady = !catalogLoading && cart.items.length > 0 && cart.items.every(item => item.product.available && item.product.verificationStatus === 'verified' && itemUnitPrice(item) !== null)
 
-  // Korpa se prazni čim server potvrdi upis, pa se pop up prikazuje prije preusmjeravanja.
-  if (sent) return <Container className="pb-24 pt-16"><OrderSentDialog reference={sent.reference} /></Container>
   if (catalogLoading) return <Container className="pb-16 pt-16"><p className="font-display text-[30px]">Učitava se katalog…</p></Container>
   if (cart.items.length === 0) return <Navigate to="/shop" replace />
   const set = (key: keyof typeof form) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm({ ...form, [key]: event.target.value })
@@ -58,8 +56,7 @@ export function Checkout() {
         subtotal: body.subtotal ?? cart.subtotal,
         status: 'Novo',
       })
-      cart.clear()
-      setSent({ reference: body.reference })
+      navigate('/order/' + body.reference, { replace: true, state: { reference: body.reference, customer: form, items: cart.items, subtotal: body.subtotal ?? cart.subtotal } })
     } catch (cause) { setState('error'); setError(cause instanceof Error ? cause.message : 'Narudžbu trenutno nije moguće poslati.') }
     finally { setState(current => current === 'sending' ? 'idle' : current) }
   }
@@ -86,6 +83,10 @@ export function OrderConfirmed() {
   const { state } = useLocation() as { state?: OrderSummaryState }
   const [saved, setSaved] = useState<SavedOrder | null>(null)
   const [checked, setChecked] = useState(false)
+  const cart = useCart()
+  const [showDialog, setShowDialog] = useState(Boolean(state))
+  // Korpa se prazni tek na stranici potvrde, pa checkout ne presmjerava na /shop.
+  useEffect(() => { if (state) cart.clear() }, [])
 
   // Nakon osvježavanja ruta nema stanje, pa se potvrda traži među zahtjevima sačuvanim na uređaju.
   useEffect(() => {
@@ -106,7 +107,8 @@ export function OrderConfirmed() {
     : (saved?.items ?? []).map(item => ({ key: `${item.slug}-${item.option ?? ''}`, label: `${item.name}${item.option ? ` · ${item.option}` : ''}`, quantity: item.quantity, total: item.unitPrice * item.quantity }))
   const found = Boolean(state || saved)
 
-  return <Container className="pt-16 sm:pt-24"><div className="mx-auto max-w-md text-center">
+  return <Container className="pt-16 sm:pt-24">
+    {showDialog && state ? <OrderSentDialog reference={reference} onClose={() => setShowDialog(false)} /> : null}<div className="mx-auto max-w-md text-center">
     <span className="mx-auto grid size-14 place-items-center bg-olive-deep text-white"><Check className="size-6"/></span>
     <h1 className="font-display mt-6 text-[43px] leading-[1.02] sm:text-[58px]">{found ? 'Zahtjev je zaprimljen' : 'Nema potvrđene narudžbe'}</h1>
     {found ? <>
