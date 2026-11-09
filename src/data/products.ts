@@ -92,6 +92,38 @@ const detoxKapiDetails = [
   'Sadrži alkohol; nije namijenjeno djeci, trudnicama i dojiljama.',
 ]
 
+const kolesterolKapiDescription = `Aktivni sastojci mješavine biljnih kapi sadrže prirodne biljne spojeve s antioksidativnim svojstvima. Pažljivo odabrana kombinacija maslačka, artičoke, cikorije, đumbira i lista masline tradicionalno se koristi za podršku normalnoj funkciji jetre, žuči i probavnog sistema. Gorke biljne tvari doprinose normalnom procesu probave, dok biljni antioksidansi pomažu u zaštiti ćelija od oksidativnog stresa.
+
+Sastav: Biljne kapi predstavljaju mješavinu sljedećih etanolno-vodenih ekstrakata:
+
+• Tinktura maslačka (Tinctura Taraxaci – list i korijen)
+• Tinktura artičoke (Tinctura Cynarae – list)
+• Tinktura cikorije (Tinctura Cichorii – korijen)
+• Tinktura đumbira (Tinctura Zingiberis – korijen)
+• Tinktura masline (Tinctura Oleae – list)
+• Alkohol
+
+Maslačak (list i korijen) tradicionalno se koristi za podršku funkciji jetre, žuči i probavnog sistema. Gorke tvari iz korijena maslačka doprinose stimulaciji probavnih sokova i normalnoj probavnoj funkciji, dok list sadrži prirodne biljne spojeve i minerale.
+
+Artičoka (list) poznata je po sadržaju cinarina i drugih biljnih polifenola. Tradicionalno se koristi za podršku funkciji jetre i žuči te normalnoj probavi masti. Doprinosi normalnom protoku žuči i olakšava probavu teže hrane.
+
+Cikorija (korijen) prirodni je izvor inulina, prebiotičkog vlakna koje služi kao hrana korisnim crijevnim bakterijama. Tradicionalno se koristi za podršku probavi, normalnom radu crijeva i održavanju ravnoteže crijevne mikroflore.
+
+Đumbir (korijen) poznat je po svojim aromatičnim i bioaktivnim spojevima. Tradicionalno se koristi za podršku probavi, smanjenje osjećaja mučnine i nadutosti te održavanje normalne funkcije probavnog sistema.
+
+Maslina (list) bogata je polifenolima, posebno oleuropeinom, koji posjeduje izražena antioksidativna svojstva. Doprinosi zaštiti ćelija od oksidativnog stresa i predstavlja vrijedan biljni sastojak ove formulacije.
+
+Način primjene: Prema preporučenoj dnevnoj dozi, razrijediti u malo vode.
+
+Pakovanje: 30 ml.`
+
+const kolesterolKapiDetails = [
+  'Sastav: etanolno-vodeni ekstrakti maslačka (list i korijen), artičoke (list), cikorije (korijen), đumbira (korijen) i masline (list); alkohol.',
+  'Pakovanje: 30 ml — 10 KM.',
+  'Način primjene: prema preporučenoj dnevnoj dozi, razrijediti u malo vode.',
+  'Sadrži alkohol; nije namijenjeno djeci, trudnicama i dojiljama.',
+]
+
 // Development references only. Historical amounts are kept separate from live prices.
 // Nothing is purchasable until the owner confirms the full product listing.
 export const products: Product[] = [
@@ -125,6 +157,7 @@ export const products: Product[] = [
   { slug: 'zlatna-snaga', name: 'Zlatna snaga', price: null, category: 'voca-i-med', image: '/images/products/zlatna-snaga.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Sastav, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
   { slug: 'sok-od-aronije', name: 'Sok od aronije sa jabukom', price: null, category: 'voca-i-med', image: '/images/products/sok-od-aronije.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Sastav, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
   { slug: 'detox-kapi', name: 'Detox kapi – Podrška metabolizmu i probavi', price: 10, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljna tinktura za podršku probavi i metabolizmu', description: detoxKapiDescription, details: detoxKapiDetails, verificationStatus: 'verified', available: true },
+  { slug: 'kapi-za-holesterol', name: 'Kapi za holesterol', price: 10, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljne kapi sa maslačkom, artičokom, cikorijom, đumbirom i maslinom', description: kolesterolKapiDescription, details: kolesterolKapiDetails, verificationStatus: 'verified', available: true },
   { slug: 'pulmomed', name: 'PulmoMed – Biljni med za dišne puteve', price: 12, category: 'voca-i-med', image: '', short: 'Biljni med sa sladićem, bijelim sljezom, timijanom i polenom', description: pulmoMedDescription, details: pulmoMedDetails, options: [{ label: '250 g', price: 12 }, { label: '350 g', price: 17 }], verificationStatus: 'verified', available: true },
 ]
 
