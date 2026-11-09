@@ -187,7 +187,7 @@ const smirenjeKapiDetails = [
   'Pakovanje: 30 ml — 10 KM.',
   'Način upotrebe: prema preporučenoj dnevnoj dozi, razrijediti u malo vode.',
   'Sadrži alkohol; nije namijenjeno djeci, trudnicama i dojiljama.',
-  'Može izazvati pospanost; ne upravljajte vozilom i ne kombujte s lijekovima za smirenje ili uspavljivanje bez savjeta ljekara.',
+  'Može izazvati pospanost; ne upravljajte vozilom i ne kombinujte s lijekovima za smirenje ili uspavljivanje bez savjeta ljekara.',
 ]
 
 const maslackKapiDescription = `Tinktura korijena maslačka prirodni je biljni pripravak dobiven ekstrakcijom korijena maslačka (Taraxacum officinale) u etanolno-vodenoj otopini. Korijen maslačka poznat je po svom bogatom sadržaju inulina, gorkih biljnih tvari i drugih prirodnih spojeva koji doprinose njegovoj tradicionalnoj primjeni za podršku probavnom sistemu.
@@ -350,6 +350,36 @@ const niacinamidFoamDetails = [
   'Samo za vanjsku upotrebu; izbjegavati kontakt s očima. U slučaju iritacije prestati s upotrebom.',
 ]
 
+const koprivaAronijaPekmezDescription = `Opis proizvoda
+
+Prirodni pekmez predstavlja pažljivo osmišljenu kombinaciju jabukovog pekmeza, mljevenog sjemena koprive, kakaa u prahu, polena i koncentriranog soka aronije, uz dodatak svježeg limunovog soka i šipka u prahu ili acerole.
+
+Jabukov pekmez daje prirodnu voćnu osnovu i ugodnu slatkoću, dok sjeme koprive obogaćuje proizvod biljnim hranjivim sastojcima. Kakao u prahu sadrži prirodne polifenole i flavonoide, poznate po svom antioksidativnom potencijalu.
+
+Aronija je posebno cijenjena zbog visokog sadržaja antocijanina i drugih polifenola koji doprinose antioksidativnom kapacitetu proizvoda. Polen predstavlja prirodni izvor različitih hranjivih tvari, dok limunov sok doprinosi svježini i prirodnoj aromi.
+
+Dodatak šipka u prahu ili acerole dodatno obogaćuje formulaciju vitaminom C, koji doprinosi normalnoj funkciji imunološkog sistema, zaštiti stanica od oksidativnog stresa i smanjenju umora i iscrpljenosti.
+
+Zahvaljujući kombinaciji voća, biljnih sastojaka i polena, ovaj pekmez predstavlja ukusan način obogaćivanja svakodnevne prehrane prirodnim hranjivim sastojcima.
+
+Šta pekmez pruža:
+
+• Bogatstvo prirodnih biljnih sastojaka i voćnih nutrijenata.
+• Sadrži sjeme koprive, polen i kakao.
+• Obogaćen aronijom, limunom i šipkom ili acerolom.
+• Prirodni izvor biljnih polifenola i antioksidativnih spojeva.
+
+Sastav: Jabukov pekmez, mljeveno sjeme koprive, kakao u prahu, polen, reducirani sok aronije, svježi limunov sok i šipak u prahu ili acerola.
+
+Posebno se ističe: Kombinacija aronije, kakaa, šipka i polena, koja proizvodu daje bogat nutritivni sastav i karakterističan voćno-čokoladni okus.`
+
+const koprivaAronijaPekmezDetails = [
+  'Sastav: jabukov pekmez, mljeveno sjeme koprive, kakao u prahu, polen, reducirani sok aronije, svježi limunov sok i šipak u prahu ili acerola.',
+  'Posebno se ističe: kombinacija aronije, kakaa, šipka i polena, koja proizvodu daje bogat nutritivni sastav i karakterističan voćno-čokoladni okus.',
+  'Sadrži polen; nije namijenjen osobama alergičnim na pčelinje proizvode.',
+  'Cijena: 19 KM. Količina pakovanja (gramaža) čeka potvrdu.',
+]
+
 // Development references only. Historical amounts are kept separate from live prices.
 export const products: Product[] = [
   { slug: 'q10-nar-divlja-ruza', name: 'Q10 anti-age krema — nar i divlja ruža', price: null, referencePrice: 30, size: '50 g (ranije navedeno)', category: 'njega-lica', image: '/images/products/q10-nar-divlja-ruza.webp', short: 'Ranije objavljena cijena nije potvrđena', description: 'Razvojna stavka iz ranije javne objave. Aktuelni opis, cijena, sastav, dostupnost i klasifikacija čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false, featured: true },
@@ -378,7 +408,7 @@ export const products: Product[] = [
   { slug: 'sok-od-borovnice', name: 'Sok od borovnice', price: null, category: 'voca-i-med', image: '/images/products/sok-od-borovnice.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Sastav, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
   { slug: 'sok-od-jabuke', name: 'Sok od jabuke', price: null, category: 'voca-i-med', image: '/images/products/sok-od-jabuke.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Sastav, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
   { slug: 'djeciji-pekmez', name: 'Dječiji pekmez', price: null, category: 'voca-i-med', image: '/images/products/djeciji-pekmez.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Sastav, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
-  { slug: 'kopriva-i-aronija', name: 'Kopriva i aronija', price: null, category: 'voca-i-med', image: '/images/products/kopriva-i-aronija.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Sastav, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
+  { slug: 'kopriva-i-aronija', name: 'Kopriva – aronija pekmez', price: 19, category: 'voca-i-med', image: '/images/products/kopriva-i-aronija.webp', short: 'Pekmez sa sjemenom koprive, aronijom, kakaom i polenom', description: koprivaAronijaPekmezDescription, details: koprivaAronijaPekmezDetails, verificationStatus: 'verified', available: true },
   { slug: 'vocni-eliksir', name: 'Voćni eliksir', price: null, category: 'voca-i-med', image: '/images/products/vocni-eliksir.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Sastav, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
   { slug: 'zlatna-snaga', name: 'Zlatna snaga', price: null, category: 'voca-i-med', image: '/images/products/zlatna-snaga.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Sastav, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
   { slug: 'sok-od-aronije', name: 'Sok od aronije sa jabukom', price: null, category: 'voca-i-med', image: '/images/products/sok-od-aronije.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Sastav, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
