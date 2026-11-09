@@ -80,6 +80,8 @@ items_json JSON NOT NULL,
     payment_method VARCHAR(40) NOT NULL DEFAULT 'Plaćanje pouzećem' CHECK (payment_method = 'Plaćanje pouzećem'),
 status ENUM('Novo','Potvrđeno','U pripremi','Poslano','Isporučeno','Otkazano') NOT NULL DEFAULT 'Novo',
     created_at VARCHAR(40) NOT NULL,
+    tracking_code VARCHAR(60) NULL,
+    tracking_sent_at VARCHAR(40) NULL,
     INDEX orders_created_at_idx (created_at)
   )`],
   ['product_images', `CREATE TABLE IF NOT EXISTS product_images (
@@ -143,6 +145,19 @@ await run('add products.options', async () => {
       if (String(rows[0]?.dataType ?? '').toLowerCase() === 'varchar') return
       await db.query('ALTER TABLE orders MODIFY COLUMN created_at VARCHAR(40) NOT NULL')
     })
+
+    // Postal tracking codes are added after the parcel leaves the store.
+    for (const column of ['tracking_code', 'tracking_sent_at']) {
+      await run('add orders.' + column, async () => {
+        const [rows] = await db.query<mysql.RowDataPacket[]>(
+          "SELECT COUNT(*) AS count FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders' AND COLUMN_NAME = ?",
+          [column]
+        )
+        if (Number(rows[0]?.count ?? 0) > 0) return
+        const definition = column === 'tracking_code' ? 'VARCHAR(60) NULL' : 'VARCHAR(40) NULL'
+        await db.query('ALTER TABLE orders ADD COLUMN ' + column + ' ' + definition + ' AFTER created_at')
+      })
+    }
 
     if (created.has('categories')) {
       await run('seed categories', async () => {

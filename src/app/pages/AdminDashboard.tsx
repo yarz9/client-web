@@ -4,6 +4,7 @@ import { AlertTriangle, Check, ImageOff, Loader2, LogOut, Package, RefreshCw, Se
 import { Button, Container, inputClass } from '../components/ui'
 import { money } from '../lib/cart'
 import { Admin as AdminPanel } from './Admin'
+import { AdminOrders } from './AdminOrders'
 
 type Status = 'Novo' | 'Potvrđeno' | 'U pripremi' | 'Poslano' | 'Isporučeno' | 'Otkazano'
 
@@ -37,7 +38,6 @@ type ManagedProduct = {
 type Filter = 'all' | 'available' | 'out' | 'awaiting' | 'nophoto' | 'featured'
 type Tab = 'overview' | 'products' | 'orders' | 'requests' | 'panel'
 
-const statuses: Status[] = ['Novo', 'Potvrđeno', 'U pripremi', 'Poslano', 'Isporučeno', 'Otkazano']
 const WEBHOOK_KEY = 'bioherbica:discord-webhook'
 
 function describe(cause: unknown) {
@@ -213,28 +213,6 @@ export function AdminDashboard() {
       delete next[product.id]
       return next
     })
-  }
-
-  async function updateOrderStatus(order: Order, status: Status) {
-    setError(''); setNotice('')
-    try {
-      await api(`/api/admin/orders/${encodeURIComponent(order.reference)}`, { method: 'PATCH', body: JSON.stringify({ status }) })
-      setNotice(`${order.reference}: status je ažuriran na „${status}“.`)
-      await loadAll()
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Status nije sačuvan.')
-    }
-  }
-
-  async function updateDelivery(order: Order, charge: number) {
-    setError(''); setNotice('')
-    try {
-      await api(`/api/admin/orders/${encodeURIComponent(order.reference)}`, { method: 'PATCH', body: JSON.stringify({ status: order.status, deliveryCharge: charge }) })
-      setNotice(`${order.reference}: dostava je upisana.`)
-      await loadAll()
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Iznos dostave nije sačuvan.')
-    }
   }
 
   function saveWebhook(event: FormEvent<HTMLFormElement>) {
@@ -586,81 +564,7 @@ export function AdminDashboard() {
         </section>
       )}
 
-      {tab === 'orders' && (
-        <section className="mt-6">
-          <p className="text-[11px] leading-relaxed text-muted">Kontakt i adresa kupaca vidljivi su samo u ovoj zaštićenoj sesiji. Dostava ostaje nepoznata dok je ne dogovorite sa kupcem.</p>
-          {ordersError && (
-            <p role="alert" className="mt-4 border-l-2 border-red-700 bg-red-50 p-3 text-[12px] text-red-800">
-              Narudžbe nisu učitane: {ordersError} — katalog radi, pa je problem na serveru; pošaljite mi ovu poruku.
-            </p>
-          )}
-          {orders.length === 0 ? (
-            <p className="mt-6 text-[12px] text-muted">Nema narudžbi za prikaz.</p>
-          ) : (
-            <ul className="mt-4 flex flex-col gap-3">
-              {orders.map(order => {
-                let customer = { name: '', phone: '', city: '', address: '', note: '', email: '' }
-                let items: { name: string; quantity: number; lineTotal: number }[] = []
-                try { customer = { ...customer, ...(JSON.parse(order.customerJson) as typeof customer) } } catch { /* keep defaults */ }
-                try { items = JSON.parse(order.itemsJson) as typeof items } catch { items = [] }
-                return (
-                  <li key={order.reference} className="border border-line bg-white p-4 sm:p-6">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="font-display text-[24px] leading-none">{order.reference}</p>
-                        <p className="mt-1 text-[10px] text-muted">{formatDate(order.createdAt)} · {order.paymentMethod}</p>
-                      </div>
-                      <label className="text-[10px] text-muted">Status
-                        <select value={order.status} onChange={event => void updateOrderStatus(order, event.target.value as Status)} className="ml-2 h-10 border border-line-strong bg-bg px-2 text-[11px] text-fg">
-                          {statuses.map(status => <option key={status}>{status}</option>)}
-                        </select>
-                      </label>
-                    </div>
-
-                    <div className="mt-4 grid gap-4 border-t border-line pt-4 md:grid-cols-2">
-                      <div>
-                        <p className="text-[10px] uppercase tracking-[.14em] text-olive">Kupac</p>
-                        <p className="mt-2 break-words text-[12px] font-medium">{customer.name} · {customer.phone}</p>
-                        <p className="mt-1 break-words text-[11px] text-muted">{customer.address}, {customer.city}</p>
-                        {customer.email && <p className="mt-1 break-words text-[11px] text-muted">{customer.email}</p>}
-                        {customer.note && <p className="mt-2 text-[11px] text-muted">Napomena: {customer.note}</p>}
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase tracking-[.14em] text-olive">Stavke</p>
-                        {items.map((item, index) => (
-                          <p key={`${order.reference}-${index}`} className="mt-1 flex justify-between gap-3 text-[11px]">
-                            <span>{item.name} × {item.quantity}</span><span>{money(item.lineTotal)}</span>
-                          </p>
-                        ))}
-                        <p className="mt-3 border-t border-line pt-2 text-[11px]">Međuzbir: <strong>{money(order.subtotal)}</strong></p>
-                        <label className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-muted">Dostava (KM)
-                          <input
-                            aria-label={`Iznos dostave za ${order.reference}`}
-                            type="number"
-                            min="0"
-                            max="10000"
-                            step="1"
-                            defaultValue={order.deliveryCharge ?? ''}
-                            placeholder="Dogovori s kupcem"
-                            className="h-10 w-32 border border-line-strong bg-bg px-2 text-[11px]"
-                            onBlur={event => {
-                              const value = event.currentTarget.value.trim()
-                              if (!value) return
-                              const parsed = Number(value)
-                              if (Number.isFinite(parsed) && parsed >= 0 && parsed !== order.deliveryCharge) void updateDelivery(order, Math.round(parsed))
-                            }}
-                          />
-                        </label>
-                        <p className="mt-1 text-[11px] font-medium">{order.total === null ? 'Konačni iznos čeka potvrdu dostave' : `Ukupno: ${money(order.total)}`}</p>
-                      </div>
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-        </section>
-      )}
+      {tab === 'orders' && <AdminOrders />}
 
       {tab === 'requests' && (
         <section className="mt-6 grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,.85fr)]">
