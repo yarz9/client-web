@@ -1,10 +1,10 @@
-import { Loader2, Mail, Search, Send, Trash2, Truck } from 'lucide-react'
+import { Check, Loader2, Mail, Search, Send, Trash2, Truck } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { Button, inputClass } from '../components/ui'
 import { money } from '../lib/cart'
 
-type Status = 'Novo' | 'Potvrdeno' | 'U pripremi' | 'Poslano' | 'Isporuceno' | 'Otkazano'
+type Status = 'Novo' | 'Potvrđeno' | 'U pripremi' | 'Poslano' | 'Isporučeno' | 'Otkazano'
 
 type Order = {
   reference: string
@@ -24,28 +24,28 @@ type Customer = { name: string; phone: string; city: string; address: string; no
 type Item = { name: string; quantity: number; lineTotal: number }
 type FilterKey = 'all' | 'new' | 'progress' | 'sent' | 'done' | 'cancelled'
 
-const STATUSES: Status[] = ['Novo', 'Potvrdeno', 'U pripremi', 'Poslano', 'Isporuceno', 'Otkazano']
+const STATUSES: Status[] = ['Novo', 'Potvrđeno', 'U pripremi', 'Poslano', 'Isporučeno', 'Otkazano']
 
 const STATUS_STYLE: Record<Status, { edge: string; badge: string }> = {
   Novo: { edge: 'border-l-amber-500', badge: 'border-amber-300 bg-amber-100 text-amber-900' },
-  Potvrdeno: { edge: 'border-l-emerald-600', badge: 'border-emerald-300 bg-emerald-50 text-emerald-800' },
+  'Potvrđeno': { edge: 'border-l-emerald-600', badge: 'border-emerald-300 bg-emerald-50 text-emerald-800' },
   'U pripremi': { edge: 'border-l-yellow-500', badge: 'border-yellow-300 bg-yellow-50 text-yellow-800' },
   Poslano: { edge: 'border-l-sky-600', badge: 'border-sky-300 bg-sky-50 text-sky-800' },
-  Isporuceno: { edge: 'border-l-olive', badge: 'border-olive/40 bg-[#eff0e8] text-olive-deep' },
+  'Isporučeno': { edge: 'border-l-olive', badge: 'border-olive/40 bg-[#eff0e8] text-olive-deep' },
   Otkazano: { edge: 'border-l-red-600', badge: 'border-red-300 bg-red-50 text-red-800' },
 }
 
 const FILTERS: { key: FilterKey; label: string; match: (status: Status) => boolean }[] = [
   { key: 'all', label: 'Sve', match: () => true },
   { key: 'new', label: 'Nove', match: status => status === 'Novo' },
-  { key: 'progress', label: 'U obradi', match: status => status === 'Potvrdeno' || status === 'U pripremi' },
+  { key: 'progress', label: 'U obradi', match: status => status === 'Potvrđeno' || status === 'U pripremi' },
   { key: 'sent', label: 'Poslano', match: status => status === 'Poslano' },
-  { key: 'done', label: 'Isporuceno', match: status => status === 'Isporuceno' },
+  { key: 'done', label: 'Isporučeno', match: status => status === 'Isporučeno' },
   { key: 'cancelled', label: 'Otkazano', match: status => status === 'Otkazano' },
 ]
 
 function describe(cause: unknown) {
-  return cause instanceof Error ? cause.message : 'nepoznata greska'
+  return cause instanceof Error ? cause.message : 'nepoznata greška'
 }
 
 async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -55,7 +55,7 @@ async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     headers: { 'content-type': 'application/json', ...init.headers },
   })
   const body = await response.json().catch(() => ({})) as T & { error?: string }
-  if (!response.ok) throw new Error(body.error ?? 'Greska ' + response.status + '.')
+  if (!response.ok) throw new Error(body.error ?? 'Greška ' + response.status + '.')
   return body
 }
 
@@ -77,12 +77,12 @@ function readOrder(order: Order) {
 }
 
 function mailtoHref(reference: string, customer: Customer, code: string) {
-  const subject = 'BioHerbica - pracenje narudzbe ' + reference
+  const subject = 'BioHerbica — praćenje narudžbe ' + reference
   const body = [
-    'Postovani ' + (customer.name || 'kupce') + ',',
+    'Poštovani ' + (customer.name || 'kupče') + ',',
     '',
-    'Vasa narudzba ' + reference + ' je predata posti.',
-    'Kod za pracenje posiljke: ' + code,
+    'Vaša narudžba ' + reference + ' je predata pošti.',
+    'Kod za praćenje pošiljke: ' + code,
     '',
     'BioHerbica',
   ].join('\n')
@@ -141,7 +141,7 @@ export function AdminOrders() {
     setBusy(order.reference); setError(''); setNotice('')
     try {
       await api('/api/admin/orders/' + encodeURIComponent(order.reference), { method: 'PATCH', body: JSON.stringify({ status }) })
-      setNotice(order.reference + ': status je sada "' + status + '".')
+      setNotice(order.reference + ': status je sada „' + status + '“.')
       await load()
     } catch (cause) {
       setError(describe(cause))
@@ -168,7 +168,7 @@ export function AdminOrders() {
     setBusy(order.reference); setError(''); setNotice('')
     try {
       await api('/api/admin/orders/' + encodeURIComponent(order.reference), { method: 'PATCH', body: JSON.stringify({ status: order.status, trackingCode: code }) })
-      setNotice(order.reference + ': kod pracenja je sacuvan.')
+      setNotice(order.reference + ': kod praćenja je sačuvan.')
       await load()
     } catch (cause) {
       setError(describe(cause))
@@ -179,11 +179,11 @@ export function AdminOrders() {
 
   async function sendEmail(order: Order) {
     const code = (codeDraft[order.reference] ?? order.trackingCode ?? '').trim()
-    if (!code) { setError('Unesite kod pracenja koji ste dobili od poste.'); return }
+    if (!code) { setError('Unesite kod praćenja koji ste dobili od pošte.'); return }
     setBusy(order.reference); setError(''); setNotice('')
     try {
       const result = await api<{ sentTo: string }>('/api/admin/orders/' + encodeURIComponent(order.reference) + '/email', { method: 'POST', body: JSON.stringify({ trackingCode: code }) })
-      setNotice('Email s kodom pracenja poslan je na ' + result.sentTo + '.')
+      setNotice('Email s kodom praćenja poslan je na ' + result.sentTo + '.')
       await load()
     } catch (cause) {
       setError(describe(cause))
@@ -193,11 +193,11 @@ export function AdminOrders() {
   }
 
   async function remove(order: Order) {
-    if (!window.confirm('Obrisati narudzbu ' + order.reference + '? Ova radnja se ne moze ponistiti.')) return
+    if (!window.confirm('Obrisati narudžbu ' + order.reference + '? Ova radnja se ne može poništiti.')) return
     setBusy(order.reference); setError(''); setNotice('')
     try {
       await api('/api/admin/orders/' + encodeURIComponent(order.reference), { method: 'DELETE' })
-      setNotice(order.reference + ': narudzba je obrisana.')
+      setNotice(order.reference + ': narudžba je obrisana.')
       await load()
     } catch (cause) {
       setError(describe(cause))
@@ -210,11 +210,11 @@ export function AdminOrders() {
     <section className="mt-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="font-display text-[27px] leading-none">Narudzbe</h2>
-          <p className="mt-2 text-[11px] leading-relaxed text-muted">Kontakt i adresa kupaca vidljivi su samo u ovoj zasticenoj sesiji. Status mijenjajte kad god se promijeni stanje posiljke.</p>
+          <h2 className="font-display text-[27px] leading-none">Narudžbe</h2>
+          <p className="mt-2 text-[11px] leading-relaxed text-muted">Kontakt i adresa kupaca vidljivi su samo u ovoj zaštićenoj sesiji. Status mijenjajte kad god se promijeni stanje pošiljke.</p>
         </div>
         <div className="flex items-center gap-2 text-[11px] text-muted">
-          {loading ? <><Loader2 className="size-4 animate-spin" /> Ucitavanje</> : <>{orders.length} narudzbi ukupno</>}
+          {loading ? <><Loader2 className="size-4 animate-spin" /> Učitavanje</> : <>{orders.length} narudžbi ukupno</>}
         </div>
       </div>
 
@@ -237,11 +237,11 @@ export function AdminOrders() {
 
       <div className="relative mt-3 max-w-md">
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-faint" />
-        <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Trazi po referenci, imenu, telefonu ili emailu" className={inputClass + ' pl-9'} />
+        <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Traži po referenci, imenu, telefonu ili emailu" className={inputClass + ' pl-9'} />
       </div>
 
       {visible.length === 0 ? (
-        <p className="mt-6 text-[12px] text-muted">{orders.length === 0 ? 'Jos nema narudzbi.' : 'Nema narudzbi za ovaj filter.'}</p>
+        <p className="mt-6 text-[12px] text-muted">{orders.length === 0 ? 'Još nema narudžbi.' : 'Nema narudžbi za ovaj filter.'}</p>
       ) : (
         <ul className="mt-4 flex flex-col gap-3">
           {visible.map(order => {
@@ -258,7 +258,7 @@ export function AdminOrders() {
                       <span className={'inline-flex items-center gap-1 border px-2 py-0.5 text-[10px] ' + style.badge}>{order.status}</span>
                       {order.trackingCode && <span className="inline-flex items-center gap-1 border border-line px-2 py-0.5 text-[10px] text-muted"><Truck className="size-3" /> {order.trackingCode}</span>}
                     </div>
-                    <p className="mt-1 text-[10px] text-muted">{formatDate(order.createdAt)} - {order.paymentMethod}</p>
+                    <p className="mt-1 text-[10px] text-muted">{formatDate(order.createdAt)} · {order.paymentMethod}</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <label className="text-[10px] text-muted">Status
@@ -276,8 +276,8 @@ export function AdminOrders() {
                         type="button"
                         onClick={() => void remove(order)}
                         disabled={working}
-                        title={'Obrisi narudzbu ' + order.reference}
-                        aria-label={'Obrisi narudzbu ' + order.reference}
+                        title={'Obriši narudžbu ' + order.reference}
+                        aria-label={'Obriši narudžbu ' + order.reference}
                         className="grid size-10 place-items-center border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-40"
                       >
                         <Trash2 className="size-4" />
@@ -289,27 +289,25 @@ export function AdminOrders() {
                 <div className="mt-4 grid gap-4 border-t border-line pt-4 md:grid-cols-2">
                   <div>
                     <p className="text-[10px] uppercase tracking-[.14em] text-olive">Kupac</p>
-                    <p className="mt-2 break-words text-[12px] font-medium">{customer.name} - {customer.phone}</p>
+                    <p className="mt-2 break-words text-[12px] font-medium">{customer.name} · {customer.phone}</p>
                     <p className="mt-1 break-words text-[11px] text-muted">{customer.address}, {customer.city}</p>
                     {customer.email ? <p className="mt-1 break-words text-[11px] text-muted">{customer.email}</p> : <p className="mt-1 text-[11px] text-muted">Kupac nije ostavio email.</p>}
                     {customer.note && <p className="mt-2 text-[11px] text-muted">Napomena: {customer.note}</p>}
 
                     <div className="mt-3 border-t border-line pt-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => setMailPanel(mailPanel === order.reference ? null : order.reference)}
-                          disabled={!customer.email}
-                        >
-                          <Mail className="size-4" /> Posalji email pracenja narudzbe
-                        </Button>
-                      </div>
-                      {!customer.email && <p className="mt-2 text-[10px] text-muted">Dugme se aktivira kada narudzba ima email kupca.</p>}
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setMailPanel(mailPanel === order.reference ? null : order.reference)}
+                        disabled={!customer.email}
+                      >
+                        <Mail className="size-4" /> Pošalji email praćenja narudžbe
+                      </Button>
+                      {!customer.email && <p className="mt-2 text-[10px] text-muted">Dugme se aktivira kada narudžba ima email kupca.</p>}
                       {mailPanel === order.reference && customer.email && (
                         <div className="mt-3 border border-line bg-bg p-3">
-                          <p className="text-[10px] uppercase tracking-[.14em] text-olive">Kod pracenja posiljke</p>
-                          <p className="mt-1 text-[10px] leading-relaxed text-muted">Upisite kod koji ste dobili od poste. Kod se cuva uz narudzbu i ide u email kupcu.</p>
+                          <p className="text-[10px] uppercase tracking-[.14em] text-olive">Kod praćenja pošiljke</p>
+                          <p className="mt-1 text-[10px] leading-relaxed text-muted">Upišite kod koji ste dobili od pošte. Kod se čuva uz narudžbu i ide u email kupcu.</p>
                           <div className="mt-2 flex flex-wrap items-center gap-2">
                             <input
                               value={code}
@@ -317,12 +315,12 @@ export function AdminOrders() {
                               placeholder="npr. RR123456789BA"
                               className="h-10 min-w-0 flex-1 border border-line-strong bg-white px-2 text-[11px]"
                             />
-                            <Button variant="secondary" size="sm" onClick={() => void saveCode(order)} disabled={working}><Check className="size-4" /> Sacuvaj kod</Button>
-                            <Button size="sm" onClick={() => void sendEmail(order)} loading={working} disabled={!code.trim()}><Send className="size-4" /> Posalji email</Button>
+                            <Button variant="secondary" size="sm" onClick={() => void saveCode(order)} disabled={working}><Check className="size-4" /> Sačuvaj kod</Button>
+                            <Button size="sm" onClick={() => void sendEmail(order)} loading={working} disabled={!code.trim()}><Send className="size-4" /> Pošalji email</Button>
                           </div>
                           <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                            <p className="text-[10px] text-muted">{order.trackingSentAt ? 'Email poslan: ' + formatDate(order.trackingSentAt) : 'Email jos nije poslan.'}</p>
-                            <a href={mailtoHref(order.reference, customer, code)} className="text-[10px] text-muted underline underline-offset-4 hover:text-fg">Posalji iz svog mejla</a>
+                            <p className="text-[10px] text-muted">{order.trackingSentAt ? 'Email poslan: ' + formatDate(order.trackingSentAt) : 'Email još nije poslan.'}</p>
+                            <a href={mailtoHref(order.reference, customer, code)} className="text-[10px] text-muted underline underline-offset-4 hover:text-fg">Pošalji iz svog mejla</a>
                           </div>
                         </div>
                       )}
@@ -333,10 +331,10 @@ export function AdminOrders() {
                     <p className="text-[10px] uppercase tracking-[.14em] text-olive">Stavke</p>
                     {items.map((item, index) => (
                       <p key={order.reference + '-' + index} className="mt-1 flex justify-between gap-3 text-[11px]">
-                        <span>{item.name} x {item.quantity}</span><span>{money(item.lineTotal)}</span>
+                        <span>{item.name} × {item.quantity}</span><span>{money(item.lineTotal)}</span>
                       </p>
                     ))}
-                    <p className="mt-3 border-t border-line pt-2 text-[11px]">Meduzbir: <strong>{money(order.subtotal)}</strong></p>
+                    <p className="mt-3 border-t border-line pt-2 text-[11px]">Međuzbir: <strong>{money(order.subtotal)}</strong></p>
                     <label className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-muted">Dostava (KM)
                       <input
                         aria-label={'Iznos dostave za ' + order.reference}
@@ -355,7 +353,7 @@ export function AdminOrders() {
                         }}
                       />
                     </label>
-                    <p className="mt-1 text-[11px] font-medium">{order.total === null ? 'Konacni iznos ceka potvrdu dostave' : 'Ukupno: ' + money(order.total)}</p>
+                    <p className="mt-1 text-[11px] font-medium">{order.total === null ? 'Konačni iznos čeka potvrdu dostave' : 'Ukupno: ' + money(order.total)}</p>
                   </div>
                 </div>
               </li>
