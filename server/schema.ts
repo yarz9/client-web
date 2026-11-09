@@ -68,6 +68,8 @@ created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX products_verification_idx (verification_status),
     INDEX products_available_idx (available)
   )`],
+  // created_at je tekst jer aplikacija upisuje ISO 8601 vrijednost sa završnim Z, a
+  // MySQL DATETIME odbija taj zapis (ERROR 1292). ISO stringovi se sortiraju ispravno.
   ['orders', `CREATE TABLE IF NOT EXISTS orders (
     reference VARCHAR(32) PRIMARY KEY,
     customer_json JSON NOT NULL,
@@ -77,7 +79,7 @@ items_json JSON NOT NULL,
     total INT NULL CHECK (total IS NULL OR total >= 0),
     payment_method VARCHAR(40) NOT NULL DEFAULT 'Plaćanje pouzećem' CHECK (payment_method = 'Plaćanje pouzećem'),
 status ENUM('Novo','Potvrđeno','U pripremi','Poslano','Isporučeno','Otkazano') NOT NULL DEFAULT 'Novo',
-    created_at DATETIME NOT NULL,
+    created_at VARCHAR(40) NOT NULL,
     INDEX orders_created_at_idx (created_at)
   )`],
   ['product_images', `CREATE TABLE IF NOT EXISTS product_images (
@@ -132,8 +134,14 @@ console.error(`Database setup step failed: ${step} (${detail.code}): ${detail.me
 await run('add products.options', async () => {
       const [rows] = await db.query<mysql.RowDataPacket[]>("SELECT COUNT(*) AS count FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products' AND COLUMN_NAME = 'options'")
       if (Number(rows[0]?.count ?? 0) > 0) return
-      await
-db.query('ALTER TABLE products ADD COLUMN options JSON NULL AFTER details')
+      await db.query('ALTER TABLE products ADD COLUMN options JSON NULL AFTER details')
+    })
+
+    // Baza kreirana ranije ima created_at kao DATETIME, što odbija ISO 8601 zapis.
+    await run('widen orders.created_at', async () => {
+      const [rows] = await db.query<mysql.RowDataPacket[]>("SELECT DATA_TYPE AS dataType FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'created_at'")
+      if (String(rows[0]?.dataType ?? '').toLowerCase() === 'varchar') return
+      await db.query('ALTER TABLE orders MODIFY COLUMN created_at VARCHAR(40) NOT NULL')
     })
 
     if (created.has('categories')) {
@@ -151,8 +159,7 @@ await run('seed policies', async () => {
         const [[row]] = await db.query<mysql.RowDataPacket[]>('SELECT COUNT(*) AS count FROM store_policies')
         if (Number(row.count) > 0) return
         for (const [sortOrder, [key, title, content]] of policies.entries()) {
-          await
-db.execute('INSERT INTO store_policies (keyname, title, content, sort_order) VALUES (?, ?, ?, ?)', [key, title, content, sortOrder])
+          await db.execute('INSERT INTO store_policies (keyname, title, content, sort_order) VALUES (?, ?, ?, ?)', [key, title, content, sortOrder])
         }
       })
     }
