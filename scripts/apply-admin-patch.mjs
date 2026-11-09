@@ -21,12 +21,21 @@ function insertBefore(source, anchor, text, label) {
   return source.slice(0, index) + text + source.slice(index)
 }
 
-function cutSection(source, start, end, label, replacement = '') {
+function insertLineBefore(source, needle, text, label) {
+  const index = source.indexOf(needle)
+  if (index === -1) throw new Error(label + ': anchor nije pronaden')
+  const lineStart = source.lastIndexOf('\n', index) + 1
+  return source.slice(0, lineStart) + text + source.slice(lineStart)
+}
+
+function cutBetweenLines(source, start, end, label, replacement = '') {
   const startIndex = source.indexOf(start)
   if (startIndex === -1) throw new Error(label + ': pocetak nije pronaden')
+  const startLine = source.lastIndexOf('\n', startIndex) + 1
   const endIndex = source.indexOf(end, startIndex + start.length)
   if (endIndex === -1) throw new Error(label + ': kraj nije pronaden')
-  return source.slice(0, startIndex) + replacement + source.slice(endIndex)
+  const endLine = source.lastIndexOf('\n', endIndex) + 1
+  return source.slice(0, startLine) + replacement + source.slice(endLine)
 }
 
 const ORDER_UPDATE_TAIL = `  if (body.trackingCode !== undefined && body.trackingCode !== null && (typeof body.trackingCode !== 'string' || body.trackingCode.trim().length > 60)) {
@@ -147,15 +156,15 @@ server = replaceOnce(
   'server: tijelo zahtjeva prima trackingCode'
 )
 
-server = cutSection(
+server = cutBetweenLines(
   server,
-  '  let result: mysql.ResultSetHeader',
+  'let result: mysql.ResultSetHeader',
   "app.get('/api/admin/images/:key{.+}', async (c) => {",
   'server: promjena statusa',
   ORDER_UPDATE_TAIL
 )
 
-server = insertBefore(server, "app.get('/api/admin/images/:key{.+}', async (c) => {", ORDER_EXTRA_ROUTES, 'server: brisanje i email')
+server = insertLineBefore(server, "app.get('/api/admin/images/:key{.+}', async (c) => {", ORDER_EXTRA_ROUTES, 'server: brisanje i email')
 
 if (server.includes('let result: mysql.ResultSetHeader')) throw new Error('server: stari kod nije uklonjen')
 if (!server.includes('tracking_code AS trackingCode')) throw new Error('server: lista nije dopunjena')
@@ -166,10 +175,10 @@ console.log('server/index.ts je dopunjen')
 
 let schema = read(SCHEMA)
 
-schema = replaceOnce(
+schema = insertLineBefore(
   schema,
-  '    created_at DATETIME NOT NULL,\n    INDEX orders_created_at_idx (created_at)',
-  '    created_at DATETIME NOT NULL,\n    tracking_code VARCHAR(60) NULL,\n    tracking_sent_at VARCHAR(40) NULL,\n    INDEX orders_created_at_idx (created_at)',
+  'INDEX orders_created_at_idx (created_at)',
+  '    tracking_code VARCHAR(60) NULL,\n    tracking_sent_at VARCHAR(40) NULL,\n',
   'schema: nove kolone'
 )
 
@@ -188,7 +197,8 @@ const MIGRATION = `    // Postal tracking codes are added after the parcel leave
 
 `
 
-schema = insertBefore(schema, "    if (created.has('categories')) {", MIGRATION, 'schema: migracija')
+schema = insertLineBefore(schema, "if (created.has('categories')) {", MIGRATION, 'schema: migracija')
+if (!schema.includes('tracking_sent_at VARCHAR(40)')) throw new Error('schema: kolone nisu dodate')
 save(SCHEMA, schema)
 console.log('server/schema.ts je dopunjen')
 
@@ -203,21 +213,22 @@ dashboard = replaceOnce(
 
 const statusStart = dashboard.indexOf('const statuses: Status[] = [')
 if (statusStart === -1) throw new Error('dashboard: lista statusa nije pronadena')
+const statusLineStart = dashboard.lastIndexOf('\n', statusStart) + 1
 const statusEnd = dashboard.indexOf('\n', statusStart)
 if (statusEnd === -1 || !dashboard.slice(statusStart, statusEnd).includes('Otkazano')) throw new Error('dashboard: lista statusa nije prepoznata')
-dashboard = dashboard.slice(0, statusStart) + dashboard.slice(statusEnd + 1)
+dashboard = dashboard.slice(0, statusLineStart) + dashboard.slice(statusEnd + 1)
 
-dashboard = cutSection(
+dashboard = cutBetweenLines(
   dashboard,
-  '  async function updateOrderStatus',
-  '  function saveWebhook',
+  'async function updateOrderStatus',
+  'function saveWebhook',
   'dashboard: uklanjanje starih akcija narudzbi'
 )
 
-dashboard = cutSection(
+dashboard = cutBetweenLines(
   dashboard,
-  "      {tab === 'orders' && (",
-  "      {tab === 'requests' && (",
+  "{tab === 'orders' && (",
+  "{tab === 'requests' && (",
   'dashboard: zamjena sekcije narudzbi',
   "      {tab === 'orders' && <AdminOrders />}\n\n"
 )
