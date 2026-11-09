@@ -124,6 +124,43 @@ const kolesterolKapiDetails = [
   'Sadrži alkohol; nije namijenjeno djeci, trudnicama i dojiljama.',
 ]
 
+const zenskeKapiDescription = `Pažljivo odabrana kombinacija vrkute, vrbovice, nevena, kunice i kantariona predstavlja tradicionalnu biljnu formulaciju namijenjenu podršci zdravlju ženskog reproduktivnog i urinarnog sistema. Ove biljke poznate su po svojoj tradicionalnoj primjeni u njezi ženskog organizma, posebno tokom menstrualnog ciklusa i u periodima hormonalnih promjena.
+
+Djelovanje i tradicionalna primjena:
+
+Vrkuta (Alchemilla vulgaris) jedna je od najpoznatijih biljaka u tradicionalnoj biljnoj njezi ženskog zdravlja. Sadrži tanine i druge biljne spojeve, a tradicionalno se koristi za ublažavanje menstrualnih tegoba i podršku normalnom menstrualnom ciklusu.
+
+Vrbovica (Epilobium sp.) tradicionalno se koristi u biljnim pripravcima za podršku zdravlju urinarnog i reproduktivnog sistema. Sadrži polifenole i flavonoide s antioksidativnim svojstvima.
+
+Neven (Calendula officinalis) poznat je po svojim umirujućim i njegujućim svojstvima. Tradicionalno se koristi za podršku zdravlju sluznice i kože te doprinosi zaštiti organizma od oksidativnog stresa.
+
+Kunica (Achillea millefolium) tradicionalno se primjenjuje kod menstrualnih tegoba i probavnih smetnji. Sadrži eterična ulja, flavonoide i druge biljne spojeve koji doprinose njenoj širokoj primjeni u tradicionalnoj fitoterapiji.
+
+Kantarion (Hypericum perforatum) poznat je po svojim bioaktivnim sastojcima, posebno hipericinu i hiperforinu. Tradicionalno se koristi za podršku emocionalnoj ravnoteži i općem osjećaju dobrobiti.
+
+Zahvaljujući kombinaciji pažljivo odabranih biljaka, ova tinktura objedinjuje tradicionalnu biljnu primjenu i predstavlja praktičan oblik biljne podrške svakodnevnoj brizi o ženskom zdravlju.
+
+Sastav: Etanolno-vodeni ekstrakt mješavine sljedećih biljaka:
+
+• Vrkuta – nadzemni dio (Alchemilla vulgaris)
+• Vrbovica – nadzemni dio (Epilobium sp.)
+• Neven – cvijet (Calendula officinalis)
+• Kunica – nadzemni dio (Achillea millefolium)
+• Kantarion – nadzemni dio (Hypericum perforatum)
+• Alkohol
+
+Način upotrebe: Prema preporučenoj dnevnoj dozi, razrijediti u malo vode.
+
+Pakovanje: 30 ml.`
+
+const zenskeKapiDetails = [
+  'Sastav: etanolno-vodeni ekstrakt vrkute (nadzemni dio), vrbovice (nadzemni dio), nevena (cvijet), kunice (nadzemni dio) i kantariona (nadzemni dio); alkohol.',
+  'Pakovanje: 30 ml — 10 KM.',
+  'Način upotrebe: prema preporučenoj dnevnoj dozi, razrijediti u malo vode.',
+  'Sadrži alkohol; nije namijenjeno djeci, trudnicama i dojiljama.',
+  'Kantarion može uticati na djelovanje nekih lijekova, uključujući hormonsku kontracepciju; prije upotrebe se posavjetujte s ljekarom.',
+]
+
 // Development references only. Historical amounts are kept separate from live prices.
 // Nothing is purchasable until the owner confirms the full product listing.
 export const products: Product[] = [
@@ -158,6 +195,7 @@ export const products: Product[] = [
   { slug: 'sok-od-aronije', name: 'Sok od aronije sa jabukom', price: null, category: 'voca-i-med', image: '/images/products/sok-od-aronije.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Sastav, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
   { slug: 'detox-kapi', name: 'Detox kapi – Podrška metabolizmu i probavi', price: 10, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljna tinktura za podršku probavi i metabolizmu', description: detoxKapiDescription, details: detoxKapiDetails, verificationStatus: 'verified', available: true },
   { slug: 'kapi-za-holesterol', name: 'Kapi za holesterol', price: 10, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljne kapi sa maslačkom, artičokom, cikorijom, đumbirom i maslinom', description: kolesterolKapiDescription, details: kolesterolKapiDetails, verificationStatus: 'verified', available: true },
+  { slug: 'kapi-za-ciste-polipe-i-miome', name: 'Kapi za ciste, polipe i miome', price: 10, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljna tinktura za podršku ženskom reproduktivnom zdravlju', description: zenskeKapiDescription, details: zenskeKapiDetails, verificationStatus: 'verified', available: true },
   { slug: 'pulmomed', name: 'PulmoMed – Biljni med za dišne puteve', price: 12, category: 'voca-i-med', image: '', short: 'Biljni med sa sladićem, bijelim sljezom, timijanom i polenom', description: pulmoMedDescription, details: pulmoMedDetails, options: [{ label: '250 g', price: 12 }, { label: '350 g', price: 17 }], verificationStatus: 'verified', available: true },
 ]
 
