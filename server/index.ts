@@ -116,7 +116,7 @@ function pruneSessions() {
 
 
 type OrderStatus = 'Novo' | 'Potvrđeno' | 'U pripremi' | 'Poslano' | 'Isporučeno' | 'Otkazano'
-type OrderItem = { slug: string; name: string; quantity: number; unitPrice: number; lineTotal: number }
+type OrderItem = { slug: string; name: string; option?: string; quantity: number; unitPrice: number; lineTotal: number }
 type Customer = { name: string; phone: string; city: string; address: string; note?: string; email?: string }
 type Order = {
   reference: string
@@ -129,6 +129,7 @@ type Order = {
   status: OrderStatus
   createdAt: string
 }
+type ProductOption = { label: string; price: number }
 type ProductRow = {
   id: number
   slug: string
@@ -140,6 +141,7 @@ type ProductRow = {
   short: string | null
   description: string | null
   details: string[]
+  options: ProductOption[] | null
   verificationStatus: 'awaiting_confirmation' | 'verified'
   available: boolean
   featured: boolean
@@ -148,9 +150,22 @@ type ProductRow = {
   createdAt: string
 }
 
+// The column is JSON, but older rows and admin input can still arrive as text.
+function parseOptions(value: unknown): ProductOption[] {
+  const parsed = typeof value === 'string' ? (() => { try { return JSON.parse(value) } catch { return null } })() : value
+  if (!Array.isArray(parsed)) return []
+  return parsed
+    .filter(option => option && typeof option.label === 'string' && option.label.trim().length > 0 && option.label.length <= 120 && Number.isSafeInteger(option.price) && option.price >= 0 && option.price <= 1000000)
+    .map(option => ({ label: String(option.label), price: Number(option.price) }))
+}
+
+function validOptions(value: unknown): value is ProductOption[] {
+  return Array.isArray(value) && value.length <= 20 && value.every(option => Boolean(option) && typeof option.label === 'string' && option.label.trim().length > 0 && option.label.length <= 120 && Number.isSafeInteger(option.price) && option.price >= 0 && option.price <= 1000000)
+}
+
 const STATUSES: OrderStatus[] = ['Novo', 'Potvrđeno', 'U pripremi', 'Poslano', 'Isporučeno', 'Otkazano']
 const IMAGE_KEY_RE = /^[a-zA-Z0-9][a-zA-Z0-9/_-]{0,180}\.(?:jpg|jpeg|png|webp)$/i
-const PRODUCT_SELECT = 'SELECT id, slug, name, price, size, category, image, short, description, details, verification_status AS verificationStatus, available, featured, reference_price AS referencePrice, sort_order AS sortOrder, created_at AS createdAt FROM products'
+const PRODUCT_SELECT = 'SELECT id, slug, name, price, size, category, image, short, description, details, options, verification_status AS verificationStatus, available, featured, reference_price AS referencePrice, sort_order AS sortOrder, created_at AS createdAt FROM products'
 const ADMIN_HEADERS = {
   'Cache-Control': 'private, no-store',
 }
@@ -265,7 +280,7 @@ app.get('/api/admin/status', async (c) => {
 app.post('/api/orders', async (c) => {
   if (!isSameOrigin(c.req.raw)) return c.json({ error: 'Zahtjev nije poslan s ove stranice.' }, 403)
   const db = c.var.db as unknown as SqlDb
-  let body: { customer?: Customer; items?: { id: string; quantity: number }[]; paymentMethod?: string }
+  let body: { customer?: Customer; items?: { id: string; option?: string; quantity: number }[]; paymentMethod?: string }
   try { body = await c.req.json() } catch { return c.json({ error: 'Podaci narudžbe nisu ispravni.' }, 400) }
 
   const customer = body.customer
@@ -281,20 +296,38 @@ app.post('/api/orders', async (c) => {
     return c.json({ error: 'Korpa je prazna ili sadrži previše stavki.' }, 400)
   }
 
-  const lines: { product: ProductRow; quantity: number }[] = []
+  const lines: { product: ProductRow; quantity: number; option?: string; unitPrice: number }[] = []
   for (const item of body.items) {
-    if (!item || typeof item.id !== 'string' || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 50) {
+    if (!item || typeof item.id !== 'string' || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 50 || (item.option !== undefined && (typeof item.option !== 'string' || item.option.length > 120))) {
       return c.json({ error: 'Provjerite proizvode i količine u korpi.' }, 400)
     }
-    const [productRows] = await db.prepare('SELECT id, slug, name, price, available, verification_status AS verificationStatus FROM products WHERE slug = ?').execute([item.id]) as unknown as [ProductRow[], unknown]
+    const [productRows] = await db.prepare('SELECT id, slug, name, price, options, available, verification_status AS verificationStatus FROM products WHERE slug = ?').execute([item.id]) as unknown as [ProductRow[], unknown]
     const productRow = productRows[0]
-    if (!productRow || !productRow.available || productRow.price == null || productRow.verificationStatus !== 'verified') {
+    if (!productRow || !productRow.available || productRow.verificationStatus !== 'verified') {
       return c.json({ error: 'Jedan ili više proizvoda još nisu dostupni za naručivanje.' }, 409)
     }
-    lines.push({ product: productRow as ProductRow, quantity: item.quantity })
+
+    // A product sold in several packagings is only orderable with one of them chosen,
+    // and the chosen packaging decides the unit price.
+    const productOptions = parseOptions(productRow.options)
+    let unitPrice = productRow.price
+    let option: string | undefined
+    if (productOptions.length > 0) {
+      const chosen = productOptions.find(candidate => candidate.label === item.option)
+      if (!chosen) return c.json({ error: 'Odaberite pakovanje za svaki proizvod u korpi.' }, 409)
+      unitPrice = chosen.price
+      option = chosen.label
+    } else if (item.option !== undefined) {
+      return c.json({ error: 'Odabrano pakovanje nije dostupno za ovaj proizvod.' }, 409)
+    }
+
+    if (unitPrice == null) {
+      return c.json({ error: 'Jedan ili više proizvoda još nisu dostupni za naručivanje.' }, 409)
+    }
+    lines.push({ product: productRow, quantity: item.quantity, option, unitPrice })
   }
 
-  const subtotal = lines.reduce((sum, line) => sum + (line.product.price ?? 0) * line.quantity, 0)
+  const subtotal = lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0)
   if (!Number.isSafeInteger(subtotal) || subtotal > 100000000) return c.json({ error: 'Ukupan iznos narudžbe nije validan.' }, 400)
   const reference = `BH-${crypto.randomUUID().slice(0, 8).toUpperCase()}`
   const createdAt = new Date().toISOString()
@@ -317,12 +350,13 @@ app.post('/api/orders', async (c) => {
       note: customer.note?.trim() ?? '',
       email: customer.email?.trim() ?? '',
     },
-    items: lines.map(({ product, quantity }) => ({
+    items: lines.map(({ product, quantity, option, unitPrice }) => ({
       slug: product.slug,
-      name: product.name,
+      name: option ? `${product.name} (${option})` : product.name,
+      ...(option ? { option } : {}),
       quantity,
-      unitPrice: product.price!,
-      lineTotal: (product.price ?? 0) * quantity,
+      unitPrice,
+      lineTotal: unitPrice * quantity,
     })),
     subtotal,
     paymentMethod: 'Plaćanje pouzećem',
@@ -481,6 +515,7 @@ app.post('/api/admin/products', async (c) => {
   if (body.image !== undefined && body.image !== null && (typeof body.image !== 'string' || body.image.length > 500 || !(body.image.startsWith('/api/images/') || /^https:\/\//i.test(body.image)))) return c.json({ error: 'Putanja fotografije nije validna.' }, 400)
   for (const [value, max, label] of [[body.size, 120, 'Veličina'], [body.short, 240, 'Kratki opis'], [body.description, 12000, 'Opis']] as const) if (value !== undefined && value !== null && (typeof value !== 'string' || value.length > max)) return c.json({ error: `${label} je predugačak ili nije validan.` }, 400)
   if (body.details && body.details.some(detail => typeof detail !== 'string' || detail.length > 500)) return c.json({ error: 'Detalji proizvoda nisu validni.' }, 400)
+  if (body.options !== undefined && body.options !== null && !validOptions(body.options)) return c.json({ error: 'Pakovanja proizvoda nisu validna.' }, 400)
   if (body.referencePrice !== undefined && body.referencePrice !== null && (!Number.isSafeInteger(body.referencePrice) || body.referencePrice < 0 || body.referencePrice > 1000000)) return c.json({ error: 'Referentna cijena nije validna.' }, 400)
   if (body.sortOrder !== undefined && (!Number.isSafeInteger(body.sortOrder) || body.sortOrder < 0 || body.sortOrder > 100000)) return c.json({ error: 'Redoslijed prikaza nije validan.' }, 400)
   if (body.category) {
@@ -502,7 +537,7 @@ app.post('/api/admin/products', async (c) => {
   if (body.verificationStatus !== undefined && !['awaiting_confirmation', 'verified'].includes(body.verificationStatus)) return c.json({ error: 'Status provjere proizvoda nije validan.' }, 400)
   if (body.available && (body.price == null || body.verificationStatus !== 'verified')) return c.json({ error: 'Proizvod bez potvrđene cijene i verifikacije ne može biti dostupan.' }, 400)
 
-  await db.prepare('INSERT INTO products (slug, name, price, size, category, image, short, description, details, verification_status, available, featured, reference_price, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').execute([
+  await db.prepare('INSERT INTO products (slug, name, price, size, category, image, short, description, details, options, verification_status, available, featured, reference_price, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').execute([
     body.slug,
     body.name.trim(),
     body.price ?? null,
@@ -512,6 +547,7 @@ app.post('/api/admin/products', async (c) => {
     body.short ?? null,
     body.description ?? null,
     JSON.stringify(Array.isArray(body.details) ? body.details : []),
+    body.options ? JSON.stringify(body.options) : null,
     body.verificationStatus ?? 'awaiting_confirmation',
     body.available ? 1 : 0,
     body.featured ? 1 : 0,
@@ -539,6 +575,7 @@ app.patch('/api/admin/products/:id', async (c) => {
   if (body.category !== undefined && body.category !== null && typeof body.category !== 'string') return c.json({ error: 'Kategorija proizvoda nije validna.' }, 400)
   if (body.image !== undefined && body.image !== null && (typeof body.image !== 'string' || body.image.length > 500 || !(body.image.startsWith('/api/images/') || /^https:\/\//i.test(body.image)))) return c.json({ error: 'Putanja fotografije nije validna.' }, 400)
   for (const [value, max, label] of [[body.size, 120, 'Veličina'], [body.short, 240, 'Kratki opis'], [body.description, 12000, 'Opis']] as const) if (value !== undefined && value !== null && (typeof value !== 'string' || value.length > max)) return c.json({ error: `${label} je predugačak ili nije validan.` }, 400)
+  if (body.options !== undefined && body.options !== null && !validOptions(body.options)) return c.json({ error: 'Pakovanja proizvoda nisu validna.' }, 400)
   if (body.referencePrice !== undefined && body.referencePrice !== null && (!Number.isSafeInteger(body.referencePrice) || body.referencePrice < 0 || body.referencePrice > 1000000)) return c.json({ error: 'Referentna cijena nije validna.' }, 400)
   if (body.sortOrder !== undefined && (!Number.isSafeInteger(body.sortOrder) || body.sortOrder < 0 || body.sortOrder > 100000)) return c.json({ error: 'Redoslijed prikaza nije validan.' }, 400)
   const [existingRows] = await db.prepare('SELECT id, slug, price, verification_status AS verificationStatus, available FROM products WHERE id = ?').execute([id]) as unknown as [{ id: number; slug: string; price: number | null; verificationStatus: ProductRow['verificationStatus']; available: number | boolean }[], unknown]
@@ -567,6 +604,7 @@ app.patch('/api/admin/products/:id', async (c) => {
     short = IF(?, ?, short),
     description = IF(?, ?, description),
     details = IF(?, ?, details),
+    options = IF(?, ?, options),
     verification_status = IF(?, ?, verification_status),
     available = IF(?, ?, available),
     featured = IF(?, ?, featured),
@@ -582,6 +620,7 @@ app.patch('/api/admin/products/:id', async (c) => {
     body.short !== undefined, body.short ?? null,
     body.description !== undefined, body.description ?? null,
     body.details !== undefined, JSON.stringify(Array.isArray(body.details) ? body.details : []),
+    body.options !== undefined, body.options == null ? null : JSON.stringify(body.options),
     body.verificationStatus !== undefined, body.verificationStatus ?? null,
     body.available !== undefined, body.available ? 1 : 0,
     body.featured !== undefined, body.featured ? 1 : 0,
@@ -894,6 +933,7 @@ function rowToProduct(row: mysql.RowDataPacket): ProductRow {
     short: row.short == null ? null : String(row.short),
     description: row.description == null ? null : String(row.description),
     details: Array.isArray(row.details) ? row.details.map(String) : row.details == null ? [] : JSON.parse(String(row.details)),
+    options: parseOptions(row.options),
     verificationStatus: String(row.verificationStatus ?? row.verification_status) as ProductRow['verificationStatus'],
     available: Boolean(row.available),
     featured: Boolean(row.featured),
