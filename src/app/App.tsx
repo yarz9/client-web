@@ -11,6 +11,7 @@ import { About } from './pages/About'
 import { AdminDashboard } from './pages/AdminDashboard'
 import { Checkout, OrderConfirmed } from './pages/Checkout'
 import { Home } from './pages/Home'
+import { OrderTracking } from './pages/OrderTracking'
 import { Product } from './pages/Product'
 import { Shop } from './pages/Shop'
 import { Policies } from './pages/Policies'
@@ -41,6 +42,7 @@ function Pages() {
           <Route path="product/:slug" element={<Product />} />
           <Route path="checkout" element={<Checkout />} />
           <Route path="order/:reference" element={<OrderConfirmed />} />
+          <Route path="track" element={<OrderTracking />} />
           <Route path="about" element={<About />} />
           <Route path="admin" element={<AdminDashboard />} />
           <Route path="policies" element={<Policies />} />
