@@ -252,6 +252,49 @@ const antireumatskiMelemDetails = [
   'Prije prve upotrebe preporučuje se testiranje na manjem području kože.',
 ]
 
+const gastroMedDescription = `Pažljivo odabrana kombinacija kamilice, sladića, lanenog sjemena, nevena, matičnjaka, bokvice, bijelog sljeza i anisa, obogaćena maslinovim uljem, medom i limunskom kiselinom, namijenjena je njezi probavnog sistema i umirivanju osjetljive želučane sluznice.
+
+Upotreba biljnog pripravka preporučuje se kao podrška:
+
+• Održavanju normalne funkcije probavnog sistema.
+• Njezi i zaštiti osjetljive želučane sluznice.
+• Ublažavanju osjećaja nelagode u želucu.
+• Održavanju ugodne probave.
+• Svakodnevnoj njezi probavnog trakta.
+
+Sastav i djelovanje biljaka:
+
+Kamilica (Matricaria chamomilla – cvijet) tradicionalno se koristi za umirivanje probavnog sistema i ublažavanje osjećaja nadutosti i grčeva.
+
+Sladić (Glycyrrhiza glabra – korijen) sadrži prirodne biljne spojeve i tradicionalno se koristi za njegu sluznice želuca i probavnog trakta.
+
+Laneno sjeme (Linum usitatissimum) bogato je sluzima koje u dodiru s vodom stvaraju zaštitni gel i doprinose njezi sluznice probavnog sistema.
+
+Neven (Calendula officinalis – cvijet) poznat je po svojim umirujućim svojstvima i tradicionalnoj primjeni u njezi probavnog sistema.
+
+Matičnjak (Melissa officinalis – list) tradicionalno se koristi za olakšavanje probave, smanjenje osjećaja nadutosti i umirivanje probavnih tegoba povezanih s napetošću.
+
+Bokvica (Plantago major – list) sadrži biljne sluzi i druge prirodne spojeve koji doprinose njenoj tradicionalnoj primjeni u njezi sluznice.
+
+Bijeli sljez (Althaea officinalis – korijen) bogat je biljnim sluzima koje stvaraju nježan zaštitni sloj i tradicionalno se koriste za umirivanje nadražene sluznice.
+
+Anis (Pimpinella anisum) tradicionalno se koristi za olakšavanje varenja i smanjenje osjećaja nadutosti.
+
+Kantarion (Hypericum perforatum) poznat je po svojim biljnim aktivnim sastojcima i tradicionalnoj primjeni u njezi probavnog sistema.
+
+Maslinovo ulje i med upotpunjuju formulaciju, dajući joj ugodnu teksturu i prirodnu bazu.
+
+Sastav: Kamilica – cvijet, sladić – korijen, laneno sjeme, neven – cvijet, matičnjak – list, bokvica – list, bijeli sljez – korijen, anis, kantarionov macerat u maslinovom ulju, med i limunska kiselina.`
+
+const gastroMedDetails = [
+  'Sastav: kamilica (cvijet), sladić (korijen), laneno sjeme, neven (cvijet), matičnjak (list), bokvica (list), bijeli sljez (korijen), anis, kantarionov macerat u maslinovom ulju, med i limunska kiselina.',
+  'Namjena: podrška normalnoj funkciji probavnog sistema, njezi osjetljive želučane sluznice i ugodnoj probavi.',
+  'Sadrži sladić: osobe s povišenim krvnim pritiskom, bolestima srca ili bubrega, kao i trudnice i dojilje, trebaju se prije upotrebe posavjetovati sa zdravstvenim radnikom.',
+  'Sadrži kantarion, koji može uticati na djelovanje nekih lijekova, uključujući hormonsku kontracepciju; prije upotrebe se posavjetujte s ljekarom ili farmaceutom.',
+  'Sadrži med; ne preporučuje se djeci mlađoj od godinu dana.',
+  'Cijena: 23 KM. Količina pakovanja i preporučena dnevna doza čekaju potvrdu.',
+]
+
 const cajSmirenjeDescription = `Biljni čaj od kamilice, matičnjaka, lipe, lavande, šipka i komorača. Nježan, blago cvjetan i prirodno aromatičan, s osvježavajućom voćnom notom šipka i blagom slatkoćom komorača. Idealan za trenutke opuštanja i uživanja u toploj šoljici čaja. ✨
 
 💜 Ukus: Nježna kamilica i lavanda, uz osvježavajuću voćnu notu šipka.
@@ -419,6 +462,7 @@ export const products: Product[] = [
   { slug: 'kapi-za-smirenje-i-nesanicu', name: 'Kapi za smirenje i nesanicu', price: 10, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljne kapi sa valerijanom, hmeljem i mentom', description: smirenjeKapiDescription, details: smirenjeKapiDetails, verificationStatus: 'verified', available: true },
   { slug: 'kapi-korijena-maslacka', name: 'Kapi korijena maslačka', price: 9, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljna tinktura od korijena maslačka (Taraxacum officinale)', description: maslackKapiDescription, details: maslackKapiDetails, verificationStatus: 'verified', available: true },
   { slug: 'antireumatski-melem', name: 'Antireumatski melem', price: 25, category: 'biljni-preparati', image: '', short: 'Biljna krema sa maceratima gaveza, kantariona i nevena', description: antireumatskiMelemDescription, details: antireumatskiMelemDetails, verificationStatus: 'verified', available: true },
+  { slug: 'gastromed', name: 'GastroMed', price: 23, category: 'biljni-preparati', image: '', short: 'Biljni pripravak sa kamilicom, sladićem, lanenim sjemenom i medom', description: gastroMedDescription, details: gastroMedDetails, verificationStatus: 'verified', available: true },
   { slug: 'pulmomed', name: 'PulmoMed – Biljni med za dišne puteve', price: 12, category: 'voca-i-med', image: '', short: 'Biljni med sa sladićem, bijelim sljezom, timijanom i polenom', description: pulmoMedDescription, details: pulmoMedDetails, options: [{ label: '250 g', price: 12 }, { label: '350 g', price: 17 }], verificationStatus: 'verified', available: true },
 ]
 
