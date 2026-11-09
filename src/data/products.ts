@@ -325,6 +325,28 @@ const hemoroidiKapiDetails = [
   'Ne prekoračivati preporučenu dnevnu dozu. Dodatak prehrani nije zamjena za raznovrsnu i uravnoteženu prehranu.',
 ]
 
+const melemHemoroidiDescription = `Sastojci: Macerat kore hrasta, macerat kantariona, macerat nevena, ulje stolisnika, ulje crnog kima, ricinusovo ulje, ulje lješnjaka, pčelinji vosak, lanolin, eterično ulje čempresa, vitamin E, eterično ulje smilja i eterično ulje metvice.
+
+Tradicionalna biljna njega u pažljivo osmišljenoj formulaciji.
+
+Bogata kombinacija biljnih macerata i prirodnih ulja, upotpunjena pčelinjim voskom i lanolinom, stvara hranjiv melem koji njeguje kožu, omekšava je i pomaže u očuvanju njene prirodne zaštitne barijere.
+
+Macerat kore hrasta, poznat po sadržaju tanina, u kombinaciji s maceratima kantariona i nevena pruža tradicionalnu biljnu njegu. Ulje crnog kima, stolisnika i lješnjaka dodatno obogaćuju formulu, dok ricinusovo ulje doprinosi bogatoj teksturi i osjećaju mekoće kože.
+
+Eterična ulja čempresa, smilja i metvice daju melemu prepoznatljiv biljni miris i osjećaj svježine, a vitamin E doprinosi zaštiti uljne faze od oksidacije.
+
+Način upotrebe: Nanijeti malu količinu melema na čistu i suhu kožu te nježno umasirati. Koristiti prema potrebi.
+
+Napomena: Samo za vanjsku upotrebu. Izbjegavati kontakt s očima i sluznicama. Prije prve upotrebe preporučuje se testirati proizvod na malom dijelu kože. Ne nanositi na oštećenu kožu. Ne preporučuje se osobama osjetljivim na neki od sastojaka.`
+
+const melemHemoroidiDetails = [
+  'Sastojci: macerat kore hrasta, macerat kantariona, macerat nevena, ulje stolisnika, ulje crnog kima, ricinusovo ulje, ulje lješnjaka, pčelinji vosak, lanolin, eterično ulje čempresa, vitamin E, eterično ulje smilja i eterično ulje metvice.',
+  'Način upotrebe: nanijeti malu količinu na čistu i suhu kožu te nježno umasirati; koristiti prema potrebi.',
+  'Samo za vanjsku upotrebu. Izbjegavati kontakt s očima i sluznicama. Ne nanositi na oštećenu kožu.',
+  'Prije prve upotrebe preporučuje se testirati proizvod na malom dijelu kože. Ne preporučuje se osobama osjetljivim na neki od sastojaka.',
+  'Cijena: 10 KM. Količina pakovanja (gramaža) čeka potvrdu.',
+]
+
 const cajSmirenjeDescription = `Biljni čaj od kamilice, matičnjaka, lipe, lavande, šipka i komorača. Nježan, blago cvjetan i prirodno aromatičan, s osvježavajućom voćnom notom šipka i blagom slatkoćom komorača. Idealan za trenutke opuštanja i uživanja u toploj šoljici čaja. ✨
 
 💜 Ukus: Nježna kamilica i lavanda, uz osvježavajuću voćnu notu šipka.
@@ -494,6 +516,7 @@ export const products: Product[] = [
   { slug: 'antireumatski-melem', name: 'Antireumatski melem', price: 25, category: 'biljni-preparati', image: '', short: 'Biljna krema sa maceratima gaveza, kantariona i nevena', description: antireumatskiMelemDescription, details: antireumatskiMelemDetails, verificationStatus: 'verified', available: true },
   { slug: 'gastromed', name: 'GastroMed', price: 23, category: 'biljni-preparati', image: '', short: 'Biljni pripravak sa kamilicom, sladićem, lanenim sjemenom i medom', description: gastroMedDescription, details: gastroMedDetails, verificationStatus: 'verified', available: true },
   { slug: 'kapi-za-hemoroide', name: 'Kapi za hemoroide', price: 10, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljne kapi sa stolisnikom, rusomačom, nevenom i listom kupine', description: hemoroidiKapiDescription, details: hemoroidiKapiDetails, verificationStatus: 'verified', available: true },
+  { slug: 'melem-za-hemoroide', name: 'Melem za hemoroide', price: 10, category: 'biljni-preparati', image: '', short: 'Biljni melem sa maceratom kore hrasta, kantariona i nevena', description: melemHemoroidiDescription, details: melemHemoroidiDetails, verificationStatus: 'verified', available: true },
   { slug: 'pulmomed', name: 'PulmoMed – Biljni med za dišne puteve', price: 12, category: 'voca-i-med', image: '', short: 'Biljni med sa sladićem, bijelim sljezom, timijanom i polenom', description: pulmoMedDescription, details: pulmoMedDetails, options: [{ label: '250 g', price: 12 }, { label: '350 g', price: 17 }], verificationStatus: 'verified', available: true },
 ]
 
