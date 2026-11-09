@@ -2,11 +2,11 @@ import { Check } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect } from 'react'
 
-import { ButtonLink } from './ui'
+import { Button, ButtonLink } from './ui'
 
 // Prikazuje se odmah nakon što server potvrdi da je zahtjev sačuvan. Kupac odatle
-// može otvoriti praćenje ili punu potvrdu, pa poruka nije jedini trag o narudžbi.
-export function OrderSentDialog({ reference }: { reference: string }) {
+// može otvoriti praćenje ili zatvoriti dijalog i vidjeti punu potvrdu ispod.
+export function OrderSentDialog({ reference, onClose }: { reference: string; onClose?: () => void }) {
   const reduced = useReducedMotion()
 
   useEffect(() => {
@@ -66,7 +66,9 @@ export function OrderSentDialog({ reference }: { reference: string }) {
             transition={{ duration: 0.3, delay: 0.26, ease: [0.22, 1, 0.36, 1] }}
           >
             <ButtonLink to="/track" className="w-full rounded-[2px]">Pratite narudžbu</ButtonLink>
-            <ButtonLink to={`/order/${reference}`} variant="secondary" className="w-full rounded-[2px]">Pogledajte potvrdu</ButtonLink>
+            {onClose
+              ? <Button variant="secondary" onClick={onClose} className="w-full rounded-[2px]">Zatvori</Button>
+              : <ButtonLink to={`/order/${reference}`} variant="secondary" className="w-full rounded-[2px]">Pogledajte potvrdu</ButtonLink>}
           </motion.div>
         </motion.div>
       </motion.div>
