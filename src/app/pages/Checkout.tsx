@@ -1,10 +1,11 @@
 import { Check } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
-import { Navigate, useLocation, useNavigate } from 'react-router'
+import { useEffect, useState, type FormEvent } from 'react'
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router'
 
 import { Button, ButtonLink, Container, inputClass } from '../components/ui'
 import { useCatalog } from '../lib/catalog'
 import { linePrice, money, useCart } from '../lib/cart'
+import { loadOrder, saveOrder, type SavedOrder } from '../lib/orders'
 
 function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return <label className={className}><span className="mb-1.5 block text-[13px] font-medium">{label}</span>{children}</label>
@@ -12,6 +13,13 @@ function Field({ label, children, className }: { label: string; children: React.
 
 type PricedItem = { option?: string; product: { price: number | null; options?: { label: string; price: number }[] } }
 const itemUnitPrice = (item: PricedItem) => linePrice({ ...item.product, options: item.product.options } as never, item.option)
+
+type OrderSummaryState = {
+  reference: string
+  customer: { name: string; phone: string; city: string; address: string; email: string }
+  items: { slug: string; option?: string; quantity: number; product: { name: string; price: number | null; options?: { label: string; price: number }[] } }[]
+  subtotal: number
+}
 
 export function Checkout() {
   const cart = useCart()
@@ -35,7 +43,19 @@ export function Checkout() {
       const response = await fetch('/api/orders', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ customer: form, items: cart.items.map((item) => ({ id: item.slug, option: item.option, quantity: item.quantity })), paymentMethod: 'pouzece' }) })
       const body = await response.json() as { reference?: string; error?: string; subtotal?: number }
       if (!response.ok || !body.reference) throw new Error(body.error ?? 'Narudžbu trenutno nije moguće sačuvati.')
-      const summary = { reference: body.reference, customer: form, items: cart.items, subtotal: body.subtotal ?? cart.subtotal }
+      const summary: OrderSummaryState = { reference: body.reference, customer: form, items: cart.items, subtotal: body.subtotal ?? cart.subtotal }
+      // Potvrda se pamti lokalno da se ne izgubi na osvježavanje stranice ili povratak na sajt.
+      saveOrder({
+        reference: body.reference,
+        createdAt: new Date().toISOString(),
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        city: form.city.trim(),
+        address: form.address.trim(),
+        items: cart.items.map(item => ({ slug: item.slug, name: item.product.name, option: item.option, quantity: item.quantity, unitPrice: itemUnitPrice(item) ?? 0 })),
+        subtotal: body.subtotal ?? cart.subtotal,
+        status: 'Novo',
+      })
       cart.clear(); navigate(`/order/${body.reference}`, { state: summary })
     } catch (cause) { setState('error'); setError(cause instanceof Error ? cause.message : 'Narudžbu trenutno nije moguće poslati.') }
     finally { setState(current => current === 'sending' ? 'idle' : current) }
@@ -56,7 +76,57 @@ export function Checkout() {
   </Container>
 }
 
+type DisplayRow = { key: string; label: string; quantity: number; total: number | null }
+
 export function OrderConfirmed() {
-  const { state } = useLocation() as { state?: { reference: string; customer: { name: string; phone: string; city: string; address: string; email: string }; items: { slug: string; option?: string; quantity: number; product: { name: string; price: number | null; options?: { label: string; price: number }[] } }[]; subtotal: number } }
-  return <Container className="pt-16 sm:pt-24"><div className="mx-auto max-w-md text-center"><span className="mx-auto grid size-14 place-items-center bg-olive-deep text-white"><Check className="size-6"/></span><h1 className="font-display mt-6 text-[43px] leading-[1.02] sm:text-[58px]">{state ? 'Zahtjev je zaprimljen' : 'Nema potvrđene narudžbe'}</h1>{state ? <><p className="mt-4 text-[13px] text-muted">Referenca zahtjeva: <strong className="text-fg">{state.reference}</strong></p><p className="mt-3 text-[12px] leading-relaxed text-muted">Hvala, {state.customer.name}. Plaćanje je pouzećem. BioHerbica potvrđuje dostupnost i cijenu dostave prije dogovora o konačnom iznosu. Ovo još nije prihvaćena narudžba.</p><div className="mt-6 border-y border-line py-4 text-left"><p className="text-[10px] uppercase tracking-[.14em] text-olive">Vaš zahtjev</p>{state.items.map(item => { const unitPrice = itemUnitPrice(item); return <div key={`${item.slug}-${item.option ?? ''}`} className="mt-3 flex justify-between gap-4 text-[11px]"><span>{item.product.name}{item.option ? ` · ${item.option}` : ''} × {item.quantity}</span><span>{unitPrice !== null ? money(unitPrice * item.quantity) : 'Cijena čeka potvrdu'}</span></div> })}<p className="mt-4 border-t border-line pt-3 text-[11px]">Međuzbir proizvoda: {money(state.subtotal)}</p><p className="mt-2 text-[10px] text-muted">Dostava i ukupan iznos potvrđuju se naknadno.</p></div></> : <p className="mt-4 text-[13px] text-muted">Ova potvrda se prikazuje samo nakon što je server uspješno sačuvao narudžbu.</p>}<ButtonLink to="/shop" variant="secondary" className="mt-8 rounded-[2px]">Povratak na katalog</ButtonLink></div></Container>
+  const { reference: routeReference } = useParams()
+  const { state } = useLocation() as { state?: OrderSummaryState }
+  const [saved, setSaved] = useState<SavedOrder | null>(null)
+  const [checked, setChecked] = useState(false)
+
+  // Nakon osvježavanja ruta nema stanje, pa se potvrda traži među zahtjevima sačuvanim na uređaju.
+  useEffect(() => {
+    if (!state && routeReference) setSaved(loadOrder(routeReference) ?? null)
+    setChecked(true)
+  }, [routeReference, state])
+
+  if (!checked) return <Container className="pb-16 pt-16"><p className="font-display text-[30px]">Učitava se potvrda…</p></Container>
+
+  const reference = state?.reference ?? saved?.reference ?? routeReference ?? ''
+  const name = state?.customer.name ?? saved?.name ?? ''
+  const subtotal = state?.subtotal ?? saved?.subtotal ?? 0
+  const rows: DisplayRow[] = state
+    ? state.items.map(item => {
+        const unitPrice = itemUnitPrice(item)
+        return { key: `${item.slug}-${item.option ?? ''}`, label: `${item.product.name}${item.option ? ` · ${item.option}` : ''}`, quantity: item.quantity, total: unitPrice === null ? null : unitPrice * item.quantity }
+      })
+    : (saved?.items ?? []).map(item => ({ key: `${item.slug}-${item.option ?? ''}`, label: `${item.name}${item.option ? ` · ${item.option}` : ''}`, quantity: item.quantity, total: item.unitPrice * item.quantity }))
+  const found = Boolean(state || saved)
+
+  return <Container className="pt-16 sm:pt-24"><div className="mx-auto max-w-md text-center">
+    <span className="mx-auto grid size-14 place-items-center bg-olive-deep text-white"><Check className="size-6"/></span>
+    <h1 className="font-display mt-6 text-[43px] leading-[1.02] sm:text-[58px]">{found ? 'Zahtjev je zaprimljen' : 'Nema potvrđene narudžbe'}</h1>
+    {found ? <>
+      <p className="mt-4 text-[13px] text-muted">Referenca zahtjeva: <strong className="text-fg">{reference}</strong></p>
+      <p className="mt-3 text-[12px] leading-relaxed text-muted">Hvala, {name}. Plaćanje je pouzećem. BioHerbica potvrđuje dostupnost i cijenu dostave prije dogovora o konačnom iznosu. Ovo još nije prihvaćena narudžba.</p>
+      <p className="mt-3 text-[11px] leading-relaxed text-faint">Referenca je sačuvana na ovom uređaju, pa se ova potvrda može ponovo otvoriti i kasnije.</p>
+      <div className="mt-6 border-y border-line py-4 text-left">
+        <p className="text-[10px] uppercase tracking-[.14em] text-olive">Vaš zahtjev</p>
+        {rows.map(row => <div key={row.key} className="mt-3 flex justify-between gap-4 text-[11px]"><span>{row.label} × {row.quantity}</span><span>{row.total !== null ? money(row.total) : 'Cijena čeka potvrdu'}</span></div>)}
+        <p className="mt-4 border-t border-line pt-3 text-[11px]">Međuzbir proizvoda: {money(subtotal)}</p>
+        <p className="mt-2 text-[10px] text-muted">Dostava i ukupan iznos potvrđuju se naknadno.</p>
+      </div>
+      <div className="mt-8 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+        <ButtonLink to="/track" className="w-full rounded-[2px] sm:w-auto">Pratite status narudžbe</ButtonLink>
+        <ButtonLink to="/shop" variant="secondary" className="w-full rounded-[2px] sm:w-auto">Povratak na katalog</ButtonLink>
+      </div>
+    </> : <>
+      <p className="mt-4 text-[13px] text-muted">Ova potvrda se prikazuje samo nakon što je server uspješno sačuvao narudžbu, ili za zahtjeve sačuvane na ovom uređaju.</p>
+      <p className="mt-3 text-[12px] leading-relaxed text-muted">Ako ste narudžbu poslali s drugog uređaja, otvorite praćenje i provjerite referencu iz poruke BioHerbice.</p>
+      <div className="mt-8 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+        <ButtonLink to="/track" className="w-full rounded-[2px] sm:w-auto">Praćenje narudžbe</ButtonLink>
+        <ButtonLink to="/shop" variant="secondary" className="w-full rounded-[2px] sm:w-auto">Povratak na katalog</ButtonLink>
+      </div>
+    </>}
+  </div></Container>
 }
