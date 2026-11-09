@@ -31,11 +31,11 @@ const SUPERSEDED_SLUGS = ['pulmomed-200g', 'pulmomed-350g']
 
 const policies: [string, string, string][] = [
   ['merchant', 'Informacije o prodavcu', 'Puni naziv poslovnog subjekta, adresa sjedišta, registracijski i kontakt podaci čekaju potvrdu vlasnice.'],
-  ['orders', 'Narudžbe i plaćanje', 'Plaćanje je zamišljeno kao plaćanje pouzećem. Narudžba se smatra zahtjevom dok BioHerbica ne potvrdi dostupnost i cijenu dostave. Online naplata nije omogućena.'],
+  ['orders', 'Narudžbe i plaćanje', 'Plaćanje je zamišljeno kao plaćanje pouzećem. Narudžba se smatra zahtjevom dok BioHerbica ne potvrdi dostupnost i cijenu dostave.\nOnline naplata nije omogućena.'],
   ['delivery', 'Dostava', 'Kurirska služba, područja dostave, cijena dostave, rokovi isporuke i postupak u slučaju nepreuzete pošiljke čekaju potvrdu.'],
   ['returns', 'Povrat i reklamacije', 'Postupak odustanka od kupovine, povrata robe, reklamacija i rokovi za njihovo rješavanje moraju biti dostavljeni i odobreni prije početka prodaje.'],
-  ['privacy', 'Privatnost i lični podaci', 'Zahtjev za narudžbu se čuva u Railway MySQL bazi koju održava vlasnik projekta. U bazu se upisuju ime, telefon, grad, adresa, opciona napomena i email, artikli s cijenama zabilježenim u trenutku zahtjeva, način plaćanja, status i vrijeme slanja. Pristup narudžbama ograničen je na zaštićeni administratorski panel; podaci se ne prikazuju javno. Vlasnica prije lansiranja treba odrediti rok čuvanja, voditelja obrade i kanal za zahtjeve kupaca te potvrditi konačnu obavijest o privatnosti.'],
-  ['legal', 'Lokalna provjera', 'Ovaj sadržaj je razvojni podsjetnik, nije pravno mišljenje ni konačan tekst uslova. Prije objave prodaje zatražite lokalnu pravnu provjeru za propise Bosne i Hercegovine.'],
+  ['privacy', 'Privatnost i lični podaci', 'Zahtjev za narudžbu se čuva u Railway MySQL bazi koju održava vlasnik projekta.\nU bazu se upisuju ime, telefon, grad, adresa, opciona napomena i email, artikli s cijenama zabilježenim u trenutku zahtjeva, način plaćanja, status i vrijeme slanja. Pristup narudžbama ograničen je na zaštićeni administratorski panel; podaci se ne prikazuju javno.\nVlasnica prije lansiranja treba odrediti rok čuvanja, voditelja obrade i kanal za zahtjeve kupaca te potvrditi konačnu obavijest o privatnosti.'],
+  ['legal', 'Lokalna provjera', 'Ovaj sadržaj je razvojni podsjetnik, nije pravno mišljenje ni konačan tekst uslova.\nPrije objave prodaje zatražite lokalnu pravnu provjeru za propise Bosne i Hercegovine.'],
 ]
 
 const tables: [string, string][] = [
@@ -164,6 +164,19 @@ export async function ensureSchema(dbUrl: string, seed: SeedCatalogue): Promise<
       await run('remove superseded packagings', async () => {
         for (const slug of SUPERSEDED_SLUGS) {
           await db.execute('DELETE FROM products WHERE slug = ?', [slug])
+        }
+      })
+
+      // A placeholder that the owner has since confirmed in the code becomes a real
+      // listing, photo and all. Only rows still awaiting confirmation are touched, so
+      // anything edited later in the admin panel survives the next deploy.
+      await run('confirm verified products', async () => {
+        for (const product of seed.products) {
+          if (product.verificationStatus !== 'verified') continue
+          await db.execute(
+            "UPDATE products SET name = ?, price = ?, size = ?, category = ?, image = COALESCE(NULLIF(?, ''), image), short = ?, description = ?, details = ?, options = COALESCE(?, options), verification_status = 'verified', available = ?, reference_price = ? WHERE slug = ? AND verification_status = 'awaiting_confirmation'",
+            [product.name, product.price, product.size ?? null, product.category, product.image || '', product.short, product.description, JSON.stringify(product.details), product.options ? JSON.stringify(product.options) : null, product.available ? 1 : 0, product.referencePrice ?? null, product.slug]
+          )
         }
       })
     }
