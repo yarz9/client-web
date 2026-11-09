@@ -187,7 +187,7 @@ const smirenjeKapiDetails = [
   'Pakovanje: 30 ml — 10 KM.',
   'Način upotrebe: prema preporučenoj dnevnoj dozi, razrijediti u malo vode.',
   'Sadrži alkohol; nije namijenjeno djeci, trudnicama i dojiljama.',
-  'Može izazvati pospanost; ne upravljajte vozilom i ne kombinujte s lijekovima za smirenje ili uspavljivanje bez savjeta ljekara.',
+  'Može izazvati pospanost; ne upravljajte vozilom i ne kombujte s lijekovima za smirenje ili uspavljivanje bez savjeta ljekara.',
 ]
 
 const maslackKapiDescription = `Tinktura korijena maslačka prirodni je biljni pripravak dobiven ekstrakcijom korijena maslačka (Taraxacum officinale) u etanolno-vodenoj otopini. Korijen maslačka poznat je po svom bogatom sadržaju inulina, gorkih biljnih tvari i drugih prirodnih spojeva koji doprinose njegovoj tradicionalnoj primjeni za podršku probavnom sistemu.
@@ -310,6 +310,46 @@ const cleansingFoamDetails = [
   'Samo za vanjsku upotrebu; izbjegavati kontakt s očima. U slučaju iritacije prestati s upotrebom.',
 ]
 
+const niacinamidFoamDescription = `Opis proizvoda
+
+Hidratantni gel za čišćenje lica predstavlja idealan izbor za svakodnevnu njegu i čišćenje kože. Njegova pažljivo osmišljena formulacija kombinuje blage biljne tenzide, hidratantne sastojke i aktivne komponente koje učinkovito uklanjaju nečistoće i višak sebuma, ostavljajući kožu čistom, svježom i njegovanom.
+
+Aloe vera gel i glicerin pomažu u očuvanju prirodne vlažnosti kože, sprečavajući osjećaj suhoće i zatezanja nakon pranja. Niacinamid (vitamin B3) doprinosi održavanju zdrave kožne barijere, ujednačenijem izgledu tena i regulaciji viška sebuma. D-pantenol (provitamin B5) poznat je po svojim umirujućim i hidratantnim svojstvima te doprinosi mekoći i ugodnom osjećaju na koži.
+
+Blagi tenzidi Decyl Glucoside i Coco Glucoside nježno uklanjaju nečistoće bez agresivnog narušavanja prirodne zaštitne barijere kože. Zahvaljujući kombinaciji aktivnih sastojaka, gel ostavlja kožu mekanom, osvježenom i hidratiziranom.
+
+Uživajte u nježnom svakodnevnom čišćenju koje istovremeno njeguje i osvježava vašu kožu.
+
+Šta gel pruža:
+
+• Nježno čisti kožu i uklanja nečistoće i višak sebuma.
+• Sadrži niacinamid, pantenol i aloe vera gel.
+• Glicerin pomaže u održavanju hidratacije kože.
+• Umiruje, osvježava i njeguje kožu.
+• Pogodan za svakodnevnu upotrebu.
+• Nježna formula bez dodanih mirisa.
+
+Aktivni sastojci:
+
+• Niacinamid: Pomaže u održavanju kožne barijere, ujednačenijem tenu i regulaciji sebuma.
+• Aloe vera: Hidratizira i umiruje kožu.
+• Glicerin: Veže vlagu i pomaže u sprečavanju isušivanja.
+• D-pantenol: Umiruje i njeguje kožu te doprinosi hidrataciji.
+
+Način upotrebe: Nanijeti malu količinu gela na vlažno lice, nježno umasirati kružnim pokretima, a zatim isprati mlakom vodom. Koristiti ujutro i navečer.
+
+Tip kože: Svi tipovi kože, uključujući normalnu, mješovitu i masnu kožu.`
+
+const niacinamidFoamDetails = [
+  'Aktivni sastojci: niacinamid (vitamin B3), aloe vera gel, glicerin i D-pantenol (provitamin B5).',
+  'Blagi tenzidi: Decyl Glucoside i Coco Glucoside.',
+  'Način upotrebe: nanijeti malu količinu na vlažno lice, nježno umasirati kružnim pokretima, isprati mlakom vodom; koristiti ujutro i navečer.',
+  'Tip kože: svi tipovi kože, uključujući normalnu, mješovitu i masnu.',
+  'Bez dodanih mirisa.',
+  'Pakovanje: prema odabranoj ambalaži — 15 KM.',
+  'Samo za vanjsku upotrebu; izbjegavati kontakt s očima. U slučaju iritacije prestati s upotrebom.',
+]
+
 // Development references only. Historical amounts are kept separate from live prices.
 export const products: Product[] = [
   { slug: 'q10-nar-divlja-ruza', name: 'Q10 anti-age krema — nar i divlja ruža', price: null, referencePrice: 30, size: '50 g (ranije navedeno)', category: 'njega-lica', image: '/images/products/q10-nar-divlja-ruza.webp', short: 'Ranije objavljena cijena nije potvrđena', description: 'Razvojna stavka iz ranije javne objave. Aktuelni opis, cijena, sastav, dostupnost i klasifikacija čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false, featured: true },
@@ -322,6 +362,7 @@ export const products: Product[] = [
   { slug: 'hair-repair-cream', name: 'Hair Repair Cream', price: null, category: 'njega-kose', image: '/images/products/hair-repair-cream.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Opis, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
   { slug: 'sebo-balance', name: 'Sebo Balance', price: null, category: 'njega-lica', image: '/images/products/sebo-balance.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Opis, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
   { slug: 'cleansing-foam', name: 'Cleansing Foam (Pantenol)', price: 15, category: 'njega-lica', image: '/images/products/cleansing-foam.webp', short: 'Nježni gel za čišćenje lica sa D-pantenolom i glicerinom', description: cleansingFoamDescription, details: cleansingFoamDetails, verificationStatus: 'verified', available: true },
+  { slug: 'cleansing-foam-niacinamid', name: 'Cleansing Foam (Niacinamid)', price: 15, category: 'njega-lica', image: '', short: 'Hidratantni gel za čišćenje lica sa niacinamidom i aloe verom', description: niacinamidFoamDescription, details: niacinamidFoamDetails, verificationStatus: 'verified', available: true },
   { slug: 'prirodni-dezodorans', name: 'Prirodni dezodorans', price: null, category: 'njega-tijela', image: '/images/products/prirodni-dezodorans.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Opis, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
   { slug: 'tonik-za-kosu', name: 'Tonik za kosu', price: null, category: 'njega-kose', image: '/images/products/tonik-za-kosu.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Opis, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
   { slug: 'sampon-za-rast-kose', name: 'Šampon za rast kose', price: null, category: 'njega-kose', image: '/images/products/sampon-za-rast-kose.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Opis, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice. Naziv ne predstavlja potvrđenu tvrdnju o djelovanju proizvoda.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
