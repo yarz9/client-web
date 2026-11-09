@@ -190,6 +190,36 @@ const smirenjeKapiDetails = [
   'Može izazvati pospanost; ne upravljajte vozilom i ne kombinujte s lijekovima za smirenje ili uspavljivanje bez savjeta ljekara.',
 ]
 
+const maslackKapiDescription = `Tinktura korijena maslačka prirodni je biljni pripravak dobiven ekstrakcijom korijena maslačka (Taraxacum officinale) u etanolno-vodenoj otopini. Korijen maslačka poznat je po svom bogatom sadržaju inulina, gorkih biljnih tvari i drugih prirodnih spojeva koji doprinose njegovoj tradicionalnoj primjeni za podršku probavnom sistemu.
+
+Korijen maslačka tradicionalno se koristi za podršku normalnoj funkciji jetre, žuči i probave. Njegove gorke tvari potiču lučenje probavnih sokova i doprinose normalnom probavnom procesu.
+
+Zahvaljujući sadržaju inulina, prirodnog prebiotičkog vlakna, korijen maslačka zanimljiv je i kao biljni sastojak koji doprinosi održavanju ravnoteže crijevne mikroflore.
+
+Maslačak je poznat i po svojoj tradicionalnoj primjeni za podršku funkciji bubrega i normalnom izlučivanju tečnosti iz organizma.
+
+Djelovanje i tradicionalna primjena:
+
+• Podržava normalnu funkciju probavnog sistema.
+• Tradicionalno se koristi za podršku funkciji jetre i žuči.
+• Doprinosi normalnom lučenju probavnih sokova.
+• Sadrži inulin, prirodno prebiotičko vlakno.
+• Tradicionalno se koristi za podršku normalnom izlučivanju tečnosti iz organizma.
+
+Sastav: Etanolno-vodeni ekstrakt korijena maslačka (Taraxacum officinale).
+
+Način upotrebe: Prema preporučenoj dnevnoj dozi, razrijediti u malo vode ili čaja.
+
+Pakovanje: 30 ml.`
+
+const maslackKapiDetails = [
+  'Sastav: etanolno-vodeni ekstrakt korijena maslačka (Taraxacum officinale).',
+  'Pakovanje: 30 ml — 9 KM.',
+  'Način upotrebe: prema preporučenoj dnevnoj dozi, razrijediti u malo vode ili čaja.',
+  'Sadrži alkohol; nije namijenjeno djeci, trudnicama i dojiljama.',
+  'Zbog tradicionalne primjene kod bubrega i izlučivanja tečnosti, osobe sa bubrežnim oboljenjima, žučnim kamencem ili one koje uzimaju lijekove za izlučivanje tečnosti trebaju se prije upotrebe posavjetovati s ljekarom.',
+]
+
 const cajSmirenjeDescription = `Biljni čaj od kamilice, matičnjaka, lipe, lavande, šipka i komorača. Nježan, blago cvjetan i prirodno aromatičan, s osvježavajućom voćnom notom šipka i blagom slatkoćom komorača. Idealan za trenutke opuštanja i uživanja u toploj šoljici čaja. ✨
 
 💜 Ukus: Nježna kamilica i lavanda, uz osvježavajuću voćnu notu šipka.
@@ -245,6 +275,7 @@ export const products: Product[] = [
   { slug: 'kapi-za-holesterol', name: 'Kapi za holesterol', price: 10, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljne kapi sa maslačkom, artičokom, cikorijom, đumbirom i maslinom', description: kolesterolKapiDescription, details: kolesterolKapiDetails, verificationStatus: 'verified', available: true },
   { slug: 'kapi-za-ciste-polipe-i-miome', name: 'Kapi za ciste, polipe i miome', price: 10, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljna tinktura za podršku ženskom reproduktivnom zdravlju', description: zenskeKapiDescription, details: zenskeKapiDetails, verificationStatus: 'verified', available: true },
   { slug: 'kapi-za-smirenje-i-nesanicu', name: 'Kapi za smirenje i nesanicu', price: 10, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljne kapi sa valerijanom, hmeljem i mentom', description: smirenjeKapiDescription, details: smirenjeKapiDetails, verificationStatus: 'verified', available: true },
+  { slug: 'kapi-korijena-maslacka', name: 'Kapi korijena maslačka', price: 9, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljna tinktura od korijena maslačka (Taraxacum officinale)', description: maslackKapiDescription, details: maslackKapiDetails, verificationStatus: 'verified', available: true },
   { slug: 'pulmomed', name: 'PulmoMed – Biljni med za dišne puteve', price: 12, category: 'voca-i-med', image: '', short: 'Biljni med sa sladićem, bijelim sljezom, timijanom i polenom', description: pulmoMedDescription, details: pulmoMedDetails, options: [{ label: '250 g', price: 12 }, { label: '350 g', price: 17 }], verificationStatus: 'verified', available: true },
 ]
 
