@@ -44,9 +44,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (catalogLoading) return
-    setLines(current => current.filter(line => {        const product = products.find(item => item.slug === line.slug)
-        const optionValid = !product?.options?.length || product.options.some(candidate => candidate.label === line.option)
-        return Boolean(product?.available && product.price !== null && product.verificationStatus === 'verified' && optionValid)
+    setLines(current => current.filter(line => {
+      const product = products.find(item => item.slug === line.slug)
+      const options = product?.options ?? []
+      const optionValid = options.length === 0 || options.some(candidate => candidate.label === line.option)
+      return Boolean(product?.available && product.price !== null && product.verificationStatus === 'verified' && optionValid)
     }))
   }, [catalogLoading, products])
 
