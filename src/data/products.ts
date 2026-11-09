@@ -71,6 +71,27 @@ const pulmoMedDetails = [
   'Ne preporučuje se djeci mlađoj od godinu dana zbog sadržaja meda.',
 ]
 
+const detoxKapiDescription = `Ova tinktura prirodna je biljna formulacija na bazi pažljivo odabrane kombinacije koprive, zelenog čaja, korijena maslačka, đumbira, komorača i cimeta. Ova sinergijska kombinacija biljnih sastojaka tradicionalno se koristi za podršku normalnoj probavi, metabolizmu i općem osjećaju vitalnosti.
+
+Djelovanje: Kopriva je poznata po svom bogatom prirodnom sastavu i tradicionalnoj primjeni za podršku organizmu. Zeleni čaj sadrži prirodne polifenole i katehine, koji doprinose antioksidativnoj zaštiti stanica. Korijen maslačka tradicionalno se koristi za podršku funkciji probavnog sistema, dok đumbir i komorač doprinose ugodnoj probavi i tradicionalno se primjenjuju kod osjećaja nadutosti i probavnih tegoba. Cimet dodatno obogaćuje formulaciju svojim aromatičnim i biljnim svojstvima.
+
+Zahvaljujući kombinaciji pažljivo odabranih biljaka, ova tinktura predstavlja praktičan oblik biljne podrške svakodnevnoj rutini i očuvanju općeg osjećaja dobrobiti.
+
+Sastojci:
+
+Kopriva (list), zeleni čaj (list), maslačak (korijen), đumbir (korijen), komorač (sjeme), cimet (kora), alkohol.
+
+Način upotrebe:
+
+Prije upotrebe dobro protresti. Uzimati prema preporučenoj dnevnoj dozi, razrijeđeno u malo vode.`
+
+const detoxKapiDetails = [
+  'Sastojci: kopriva (list), zeleni čaj (list), maslačak (korijen), đumbir (korijen), komorač (sjeme), cimet (kora), alkohol.',
+  'Neto količina: 30 ml — 10 KM.',
+  'Način upotrebe: prije upotrebe dobro protresti; uzimati prema preporučenoj dnevnoj dozi, razrijeđeno u malo vode.',
+  'Sadrži alkohol; nije namijenjeno djeci, trudnicama i dojiljama.',
+]
+
 // Development references only. Historical amounts are kept separate from live prices.
 // Nothing is purchasable until the owner confirms the full product listing.
 export const products: Product[] = [
@@ -103,6 +124,7 @@ export const products: Product[] = [
   { slug: 'vocni-eliksir', name: 'Voćni eliksir', price: null, category: 'voca-i-med', image: '/images/products/vocni-eliksir.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Sastav, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
   { slug: 'zlatna-snaga', name: 'Zlatna snaga', price: null, category: 'voca-i-med', image: '/images/products/zlatna-snaga.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Sastav, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
   { slug: 'sok-od-aronije', name: 'Sok od aronije sa jabukom', price: null, category: 'voca-i-med', image: '/images/products/sok-od-aronije.webp', short: 'Naziv preuzet s etikete; podaci čekaju potvrdu', description: 'Naziv je pročitan s etikete na fotografiji koju je dostavila klijentica. Sastav, veličina, cijena, dostupnost i uslovi prodaje čekaju potvrdu BioHerbice.', details: ['Razvojni unos — nije ponuda za kupovinu.'], verificationStatus: 'awaiting_confirmation', available: false },
+  { slug: 'detox-kapi', name: 'Detox kapi – Podrška metabolizmu i probavi', price: 10, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljna tinktura za podršku probavi i metabolizmu', description: detoxKapiDescription, details: detoxKapiDetails, verificationStatus: 'verified', available: true },
   { slug: 'pulmomed', name: 'PulmoMed – Biljni med za dišne puteve', price: 12, category: 'voca-i-med', image: '', short: 'Biljni med sa sladićem, bijelim sljezom, timijanom i polenom', description: pulmoMedDescription, details: pulmoMedDetails, options: [{ label: '250 g', price: 12 }, { label: '350 g', price: 17 }], verificationStatus: 'verified', available: true },
 ]
 
