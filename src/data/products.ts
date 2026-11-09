@@ -295,6 +295,36 @@ const gastroMedDetails = [
   'Cijena: 23 KM. Količina pakovanja i preporučena dnevna doza čekaju potvrdu.',
 ]
 
+const hemoroidiKapiDescription = `Sastav:
+
+Stolisnik (kunica), rusomača, neven – cvijet, list kupine i etanolno-vodeni ekstrakt.
+
+Namjena proizvoda:
+
+Pažljivo odabrana kombinacija stolisnika, rusomače, nevena i lista kupine predstavlja biljnu formulaciju koja se tradicionalno koristi kao podrška ženskom zdravlju i menstrualnoj ravnoteži.
+
+Aktivni biljni sastojci poznati su po svojoj tradicionalnoj primjeni kod menstrualnih tegoba, osjećaja nelagode i grčeva tokom ciklusa. Stolisnik i rusomača posebno su cijenjeni u tradicionalnoj biljnoj medicini zbog svoje primjene kod obilnih menstruacija, dok neven i list kupine upotpunjuju formulaciju svojim biljnim sastojcima i adstringentnim svojstvima.
+
+Kombinacija ovih biljaka predstavlja praktičan oblik tradicionalne biljne podrške tokom menstrualnog ciklusa i svakodnevne brige o ženskom zdravlju.
+
+Primjena:
+
+Prije upotrebe bočicu dobro promućkati. Uzimati prema preporučenoj dnevnoj dozi, razrijeđeno u malo vode.
+
+Upozorenje:
+
+Ne preporučuje se trudnicama, dojiljama, djeci i osobama preosjetljivim na neki od sastojaka. Ne prekoračivati preporučenu dnevnu dozu. Dodatak prehrani nije zamjena za raznovrsnu i uravnoteženu prehranu.
+
+Pakovanje: 30 ml.`
+
+const hemoroidiKapiDetails = [
+  'Sastav: stolisnik (kunica), rusomača, neven (cvijet), list kupine i etanolno-vodeni ekstrakt.',
+  'Pakovanje: 30 ml — 10 KM.',
+  'Primjena: prije upotrebe bočicu dobro promućkati; uzimati prema preporučenoj dnevnoj dozi, razrijeđeno u malo vode.',
+  'Upozorenje: ne preporučuje se trudnicama, dojiljama, djeci i osobama preosjetljivim na neki od sastojaka.',
+  'Ne prekoračivati preporučenu dnevnu dozu. Dodatak prehrani nije zamjena za raznovrsnu i uravnoteženu prehranu.',
+]
+
 const cajSmirenjeDescription = `Biljni čaj od kamilice, matičnjaka, lipe, lavande, šipka i komorača. Nježan, blago cvjetan i prirodno aromatičan, s osvježavajućom voćnom notom šipka i blagom slatkoćom komorača. Idealan za trenutke opuštanja i uživanja u toploj šoljici čaja. ✨
 
 💜 Ukus: Nježna kamilica i lavanda, uz osvježavajuću voćnu notu šipka.
@@ -463,6 +493,7 @@ export const products: Product[] = [
   { slug: 'kapi-korijena-maslacka', name: 'Kapi korijena maslačka', price: 9, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljna tinktura od korijena maslačka (Taraxacum officinale)', description: maslackKapiDescription, details: maslackKapiDetails, verificationStatus: 'verified', available: true },
   { slug: 'antireumatski-melem', name: 'Antireumatski melem', price: 25, category: 'biljni-preparati', image: '', short: 'Biljna krema sa maceratima gaveza, kantariona i nevena', description: antireumatskiMelemDescription, details: antireumatskiMelemDetails, verificationStatus: 'verified', available: true },
   { slug: 'gastromed', name: 'GastroMed', price: 23, category: 'biljni-preparati', image: '', short: 'Biljni pripravak sa kamilicom, sladićem, lanenim sjemenom i medom', description: gastroMedDescription, details: gastroMedDetails, verificationStatus: 'verified', available: true },
+  { slug: 'kapi-za-hemoroide', name: 'Kapi za hemoroide', price: 10, size: '30 ml', category: 'biljni-preparati', image: '', short: 'Biljne kapi sa stolisnikom, rusomačom, nevenom i listom kupine', description: hemoroidiKapiDescription, details: hemoroidiKapiDetails, verificationStatus: 'verified', available: true },
   { slug: 'pulmomed', name: 'PulmoMed – Biljni med za dišne puteve', price: 12, category: 'voca-i-med', image: '', short: 'Biljni med sa sladićem, bijelim sljezom, timijanom i polenom', description: pulmoMedDescription, details: pulmoMedDetails, options: [{ label: '250 g', price: 12 }, { label: '350 g', price: 17 }], verificationStatus: 'verified', available: true },
 ]
 
