@@ -1,7 +1,8 @@
 import { Check } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
-import { Navigate, useLocation, useNavigate, useParams } from 'react-router'
+import { Navigate, useLocation, useParams } from 'react-router'
 
+import { OrderSentDialog } from '../components/OrderSentDialog'
 import { Button, ButtonLink, Container, inputClass } from '../components/ui'
 import { useCatalog } from '../lib/catalog'
 import { linePrice, money, useCart } from '../lib/cart'
@@ -24,13 +25,15 @@ type OrderSummaryState = {
 export function Checkout() {
   const cart = useCart()
   const { loading: catalogLoading } = useCatalog()
-  const navigate = useNavigate()
   const [form, setForm] = useState({ name: '', phone: '', city: '', address: '', note: '', email: '' })
   const [confirmed, setConfirmed] = useState(false)
   const [state, setState] = useState<'idle' | 'sending' | 'error'>('idle')
   const [error, setError] = useState('')
+  const [sent, setSent] = useState<{ reference: string } | null>(null)
   const catalogReady = !catalogLoading && cart.items.length > 0 && cart.items.every(item => item.product.available && item.product.verificationStatus === 'verified' && itemUnitPrice(item) !== null)
 
+  // Korpa se prazni čim server potvrdi upis, pa se pop up prikazuje prije preusmjeravanja.
+  if (sent) return <Container className="pb-24 pt-16"><OrderSentDialog reference={sent.reference} /></Container>
   if (catalogLoading) return <Container className="pb-16 pt-16"><p className="font-display text-[30px]">Učitava se katalog…</p></Container>
   if (cart.items.length === 0) return <Navigate to="/shop" replace />
   const set = (key: keyof typeof form) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm({ ...form, [key]: event.target.value })
@@ -43,7 +46,6 @@ export function Checkout() {
       const response = await fetch('/api/orders', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ customer: form, items: cart.items.map((item) => ({ id: item.slug, option: item.option, quantity: item.quantity })), paymentMethod: 'pouzece' }) })
       const body = await response.json() as { reference?: string; error?: string; subtotal?: number }
       if (!response.ok || !body.reference) throw new Error(body.error ?? 'Narudžbu trenutno nije moguće sačuvati.')
-      const summary: OrderSummaryState = { reference: body.reference, customer: form, items: cart.items, subtotal: body.subtotal ?? cart.subtotal }
       // Potvrda se pamti lokalno da se ne izgubi na osvježavanje stranice ili povratak na sajt.
       saveOrder({
         reference: body.reference,
@@ -56,7 +58,8 @@ export function Checkout() {
         subtotal: body.subtotal ?? cart.subtotal,
         status: 'Novo',
       })
-      cart.clear(); navigate(`/order/${body.reference}`, { state: summary })
+      cart.clear()
+      setSent({ reference: body.reference })
     } catch (cause) { setState('error'); setError(cause instanceof Error ? cause.message : 'Narudžbu trenutno nije moguće poslati.') }
     finally { setState(current => current === 'sending' ? 'idle' : current) }
   }
