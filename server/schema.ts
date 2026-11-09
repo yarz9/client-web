@@ -11,6 +11,7 @@ export type SeedProduct = {
   short: string
   description: string
   details: string[]
+  options?: { label: string; price: number }[] | null
   verificationStatus: 'awaiting_confirmation' | 'verified'
   available: boolean
   featured?: boolean
@@ -23,6 +24,10 @@ export type SetupReport = {
   products: number
   failures: { step: string; code: string; message: string }[]
 }
+
+// Packagings the catalogue used to list as separate products. They are removed on
+// boot so a product that gained a packaging choice is not shown twice.
+const SUPERSEDED_SLUGS = ['pulmomed-200g', 'pulmomed-350g']
 
 const policies: [string, string, string][] = [
   ['merchant', 'Informacije o prodavcu', 'Puni naziv poslovnog subjekta, adresa sjedišta, registracijski i kontakt podaci čekaju potvrdu vlasnice.'],
@@ -52,6 +57,7 @@ const tables: [string, string][] = [
     short VARCHAR(240) NULL,
     description TEXT NULL,
     details JSON NULL,
+    options JSON NULL,
     verification_status ENUM('awaiting_confirmation','verified') NOT NULL DEFAULT 'awaiting_confirmation',
     available TINYINT(1) NOT NULL DEFAULT 0,
     featured TINYINT(1) NOT NULL DEFAULT 0,
@@ -121,6 +127,13 @@ export async function ensureSchema(dbUrl: string, seed: SeedCatalogue): Promise<
       if (await run(`create ${name}`, () => db.query(sql))) created.add(name)
     }
 
+    // Tables created before packagings existed still need the column.
+    await run('add products.options', async () => {
+      const [rows] = await db.query<mysql.RowDataPacket[]>("SELECT COUNT(*) AS count FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products' AND COLUMN_NAME = 'options'")
+      if (Number(rows[0]?.count ?? 0) > 0) return
+      await db.query('ALTER TABLE products ADD COLUMN options JSON NULL AFTER details')
+    })
+
     if (created.has('categories')) {
       await run('seed categories', async () => {
         const [[row]] = await db.query<mysql.RowDataPacket[]>('SELECT COUNT(*) AS count FROM categories')
@@ -144,7 +157,13 @@ export async function ensureSchema(dbUrl: string, seed: SeedCatalogue): Promise<
     if (created.has('products')) {
       await run('seed products', async () => {
         for (const [sortOrder, product] of seed.products.entries()) {
-          await db.execute('INSERT INTO products (slug, name, price, size, category, image, short, description, details, verification_status, available, featured, reference_price, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE image = IF(image IS NULL OR image = ?, VALUES(image), image)', [product.slug, product.name, product.price, product.size ?? null, product.category, product.image || null, product.short, product.description, JSON.stringify(product.details), product.verificationStatus, product.available ? 1 : 0, product.featured ? 1 : 0, product.referencePrice ?? null, sortOrder, ''])
+          await db.execute('INSERT INTO products (slug, name, price, size, category, image, short, description, details, options, verification_status, available, featured, reference_price, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE image = IF(image IS NULL OR image = ?, VALUES(image), image), options = IF(options IS NULL, VALUES(options), options)', [product.slug, product.name, product.price, product.size ?? null, product.category, product.image || null, product.short, product.description, JSON.stringify(product.details), product.options ? JSON.stringify(product.options) : null, product.verificationStatus, product.available ? 1 : 0, product.featured ? 1 : 0, product.referencePrice ?? null, sortOrder, ''])
+        }
+      })
+
+      await run('remove superseded packagings', async () => {
+        for (const slug of SUPERSEDED_SLUGS) {
+          await db.execute('DELETE FROM products WHERE slug = ?', [slug])
         }
       })
     }
