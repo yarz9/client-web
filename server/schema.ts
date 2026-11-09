@@ -160,9 +160,7 @@ db.execute('INSERT INTO store_policies (keyname, title, content, sort_order) VAL
     if (created.has('products')) {
       await run('seed products', async () => {
         for (const [sortOrder, product] of seed.products.entries()) {
-          await
-db.execute('INSERT INTO products (slug, name, price, size, category, image, short, description, details, options, verification_status, available, featured, reference_price, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE image = IF(image IS NULL OR image =
-?, VALUES(image), image), options = IF(options IS NULL, VALUES(options), options)', [product.slug, product.name, product.price, product.size ?? null, product.category, product.image || null, product.short, product.description, JSON.stringify(product.details), product.options ? JSON.stringify(product.options) : null,
+          await db.execute('INSERT INTO products (slug, name, price, size, category, image, short, description, details, options, verification_status, available, featured, reference_price, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE image = IF(image IS NULL OR image = ?, VALUES(image), image), options = IF(options IS NULL, VALUES(options), options)', [product.slug, product.name, product.price, product.size ?? null, product.category, product.image || null, product.short, product.description, JSON.stringify(product.details), product.options ? JSON.stringify(product.options) : null,
 product.verificationStatus, product.available ? 1 : 0, product.featured ? 1 : 0, product.referencePrice ?? null, sortOrder, ''])
         }
       })
