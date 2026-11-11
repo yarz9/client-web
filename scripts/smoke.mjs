@@ -19,6 +19,20 @@ function check(name, ok, detail) {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${ok || !detail ? '' : ` -> ${detail}`}`)
 }
 
+function must(condition, message) {
+  if (!condition) throw new Error(message)
+}
+
+// One failing check must never skip the rest of the suite.
+async function expect(name, run) {
+  try {
+    await run()
+    check(name, true)
+  } catch (error) {
+    check(name, false, error instanceof Error ? error.message : String(error))
+  }
+}
+
 function freePort() {
   return new Promise((resolvePort, reject) => {
     const probe = net.createServer()
@@ -42,7 +56,7 @@ function request(base, path, { method = 'GET', headers = {}, body } = {}) {
         resolveResponse({ status: res.statusCode ?? 0, headers: res.headers, text: buffer.toString('utf8'), buffer })
       })
     })
-    req.on('error', reject)
+    req.on('error', (error) => reject(error))
     if (body !== undefined) req.write(body)
     req.end()
   })
@@ -63,17 +77,18 @@ async function startServer(env) {
   child.stderr.on('data', (chunk) => { output += chunk })
 
   const base = { hostname: '127.0.0.1', port, href: `http://127.0.0.1:${port}` }
+  const diagnose = () => `process ${child.exitCode === null ? 'running' : `exited with ${child.exitCode}`}; last output: ${output.trim().slice(-600) || '(none)'}`
   const deadline = Date.now() + 25000
   while (Date.now() < deadline) {
-    if (child.exitCode !== null) throw new Error(`server exited early (${child.exitCode}):\n${output}`)
+    if (child.exitCode !== null) throw new Error(`server exited early: ${diagnose()}`)
     try {
       const res = await request(base, '/api/healthz')
-      if (res.status === 200) return { child, base, output: () => output }
+      if (res.status === 200) return { child, base, diagnose }
     } catch {}
     await sleep(150)
   }
   child.kill('SIGKILL')
-  throw new Error(`server did not answer /api/healthz in time:\n${output}`)
+  throw new Error(`server did not answer /api/healthz in time: ${diagnose()}`)
 }
 
 async function stopServer(server) {
@@ -85,6 +100,18 @@ async function stopServer(server) {
   child.kill('SIGTERM')
   await Promise.race([exited, sleep(3000)])
   if (child.exitCode === null) child.kill('SIGKILL')
+}
+
+// The server drops the socket of an oversized request, so give it a moment and retry.
+async function waitAlive(server, attempts = 25) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      const res = await request(server.base, '/api/healthz')
+      if (res.status === 200) return
+    } catch {}
+    await sleep(200)
+  }
+  throw new Error(`server stopped answering /api/healthz (${server.diagnose()})`)
 }
 
 function login(base, { username = 'smoke-admin', password = 'smoke-lozinka-1234', ip } = {}) {
@@ -181,54 +208,85 @@ async function main() {
   }
   const server = await startServer(adminEnv)
   try {
-    const health = await request(server.base, '/api/healthz')
-    check('/api/healthz answers 200', health.status === 200, `status ${health.status}`)
-    const missing = SECURITY_HEADERS.filter((name) => !health.headers[name])
-    check('every response carries the security headers', missing.length === 0, `missing ${missing.join(', ')}`)
-
-    const malformed = await request(server.base, '/%E0%A4%A')
-    check('malformed URL returns 400', malformed.status === 400, `status ${malformed.status}`)
-    const alive = await request(server.base, '/api/healthz')
-    check('server survives a malformed URL', alive.status === 200, `status ${alive.status}`)
-
-    const statuses = []
-    for (let attempt = 1; attempt <= 12; attempt += 1) {
-      const res = await login(server.base, { password: `pogresna-${attempt}`, ip: `198.51.100.${attempt}` })
-      statuses.push(res.status)
-    }
-    const limitedAt = statuses.indexOf(429)
-    check('rotating X-Forwarded-For still hits 429 by the 11th attempt', limitedAt !== -1 && limitedAt <= 10, `statuses ${statuses.join(',')}`)
-    const lockedOut = await login(server.base, { ip: '203.0.113.99' })
-    check('a correct password is refused while the account is locked', lockedOut.status === 429, `status ${lockedOut.status}`)
-
-    const bigBody = 'x'.repeat(200 * 1024)
-    const tooLarge = await request(server.base, '/api/orders', {
-      method: 'POST',
-      headers: { origin: server.base.href, 'content-type': 'application/json', 'content-length': String(bigBody.length) },
-      body: bigBody,
+    let healthHeaders = {}
+    await expect('/api/healthz answers 200', async () => {
+      const res = await request(server.base, '/api/healthz')
+      healthHeaders = res.headers
+      must(res.status === 200, `status ${res.status}`)
     })
-    check('200 KB order body returns 413', tooLarge.status === 413, `status ${tooLarge.status}`)
-    const afterLarge = await request(server.base, '/api/healthz')
-    check('server survives an oversized body', afterLarge.status === 200, `status ${afterLarge.status}`)
 
-    const pngUpload = multipart(makePng(), 'image/png')
-    const pngRes = await request(server.base, '/api/admin/images/smoke/test.png', {
-      method: 'POST',
-      headers: { origin: server.base.href, 'content-type': pngUpload.type, 'content-length': String(pngUpload.body.length) },
-      body: pngUpload.body,
+    await expect('every response carries the security headers', async () => {
+      const missing = SECURITY_HEADERS.filter((name) => !healthHeaders[name])
+      must(missing.length === 0, `missing ${missing.join(', ') || 'all (no response)'}`)
     })
-    check('a genuine PNG passes upload validation', pngRes.status !== 415, `status ${pngRes.status}`)
 
-    const textUpload = multipart(Buffer.from('ovo nije slika, samo tekst\n', 'utf8'), 'image/png')
-    const textRes = await request(server.base, '/api/admin/images/smoke/fake.png', {
-      method: 'POST',
-      headers: { origin: server.base.href, 'content-type': textUpload.type, 'content-length': String(textUpload.body.length) },
-      body: textUpload.body,
+    await expect('malformed URL returns 400', async () => {
+      const res = await request(server.base, '/%E0%A4%A')
+      must(res.status === 400, `status ${res.status}`)
     })
-    check('text labelled image/png is rejected with 415', textRes.status === 415, `status ${textRes.status}`)
 
-    const csp = String(health.headers['content-security-policy'] ?? '')
-    check('CSP no longer allows discord.com', !csp.includes('discord.com'), csp)
+    await expect('server survives a malformed URL', async () => {
+      await waitAlive(server)
+    })
+
+    await expect('rotating X-Forwarded-For still hits 429 by the 11th attempt', async () => {
+      const statuses = []
+      for (let attempt = 1; attempt <= 12; attempt += 1) {
+        try {
+          const res = await login(server.base, { password: `pogresna-${attempt}`, ip: `198.51.100.${attempt}` })
+          statuses.push(res.status)
+        } catch {
+          statuses.push(0)
+        }
+      }
+      const limitedAt = statuses.indexOf(429)
+      must(limitedAt !== -1 && limitedAt <= 10, `statuses ${statuses.join(',')}`)
+    })
+
+    await expect('a correct password is refused while the account is locked', async () => {
+      const res = await login(server.base, { ip: '203.0.113.99' })
+      must(res.status === 429, `status ${res.status}`)
+    })
+
+    await expect('200 KB order body returns 413', async () => {
+      const bigBody = 'x'.repeat(200 * 1024)
+      const res = await request(server.base, '/api/orders', {
+        method: 'POST',
+        headers: { origin: server.base.href, 'content-type': 'application/json', 'content-length': String(bigBody.length) },
+        body: bigBody,
+      })
+      must(res.status === 413, `status ${res.status}`)
+    })
+
+    await expect('server survives an oversized body', async () => {
+      await waitAlive(server)
+    })
+
+    await expect('a genuine PNG passes upload validation', async () => {
+      const upload = multipart(makePng(), 'image/png')
+      const res = await request(server.base, '/api/admin/images/smoke/test.png', {
+        method: 'POST',
+        headers: { origin: server.base.href, 'content-type': upload.type, 'content-length': String(upload.body.length) },
+        body: upload.body,
+      })
+      must(res.status !== 415, `status ${res.status}`)
+    })
+
+    await expect('text labelled image/png is rejected with 415', async () => {
+      const upload = multipart(Buffer.from('ovo nije slika, samo tekst\n', 'utf8'), 'image/png')
+      const res = await request(server.base, '/api/admin/images/smoke/fake.png', {
+        method: 'POST',
+        headers: { origin: server.base.href, 'content-type': upload.type, 'content-length': String(upload.body.length) },
+        body: upload.body,
+      })
+      must(res.status === 415, `status ${res.status}`)
+    })
+
+    await expect('CSP no longer allows discord.com', async () => {
+      const csp = String(healthHeaders['content-security-policy'] ?? '')
+      must(csp.length > 0, 'no content-security-policy header')
+      must(!csp.includes('discord.com'), csp)
+    })
   } finally {
     await stopServer(server)
   }
@@ -236,8 +294,10 @@ async function main() {
   // 2. /api/healthz must not need a database ---------------------------------------
   const noDb = await startServer({ ...adminEnv, DATABASE_URL: '' })
   try {
-    const res = await request(noDb.base, '/api/healthz')
-    check('/api/healthz works without a database', res.status === 200, `status ${res.status}`)
+    await expect('/api/healthz works without a database', async () => {
+      const res = await request(noDb.base, '/api/healthz')
+      must(res.status === 200, `status ${res.status}`)
+    })
   } finally {
     await stopServer(noDb)
   }
@@ -250,8 +310,10 @@ async function main() {
     ADMIN_SESSION_SECRET: '',
   })
   try {
-    const res = await login(noSecret.base)
-    check('login without ADMIN_SESSION_SECRET returns 503', res.status === 503, `status ${res.status}`)
+    await expect('login without ADMIN_SESSION_SECRET returns 503', async () => {
+      const res = await login(noSecret.base)
+      must(res.status === 503, `status ${res.status}`)
+    })
   } finally {
     await stopServer(noSecret)
   }
@@ -265,8 +327,10 @@ async function main() {
       ADMIN_SESSION_SECRET: 's'.repeat(40),
     })
     try {
-      const res = await login(weak.base, { password })
-      check(`login rejects weak ADMIN_PASSWORD "${password}" with 503`, res.status === 503, `status ${res.status}`)
+      await expect(`login rejects weak ADMIN_PASSWORD "${password}" with 503`, async () => {
+        const res = await login(weak.base, { password })
+        must(res.status === 503, `status ${res.status}`)
+      })
     } finally {
       await stopServer(weak)
     }
