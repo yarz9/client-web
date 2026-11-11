@@ -37,7 +37,7 @@ const DATABASE_URL = resolveDatabaseUrl()
 
 const STATIC_ROOT = resolve(__dirname, '..', 'dist', 'client')
 const ADMIN_SESSION_COOKIE = 'bioherbica_admin'
-const ADMIN_SESSION_SECONDS = 8 * 60 * 60
+const ADMIN_SESSION_SECONDS = 4 * 60 * 60
 const loginAttempts = new Map<string, { count: number; resetAt: number }>()
 
 function secureEqual(left: string, right: string) {
@@ -51,6 +51,7 @@ function secureEqual(left: string, right: string) {
 function sessionSecret() {
   const configured = (process.env.ADMIN_SESSION_SECRET ?? '').trim()
   if (configured.length >= 32) return configured
+  if (process.env.NODE_ENV === 'production') return ''
   const { username, password } = adminCredentials()
   if (!username || password.length < 8) return ''
   return createHmac('sha256', password).update(`bioherbica-session:${username}`).digest('base64url')
@@ -182,6 +183,70 @@ type SqlDb = {
   end(): Promise<void>
 }
 
+const dbPool = DATABASE_URL ? mysql.createPool(DATABASE_URL) : null
+
+async function acquireConnection() {
+  if (!dbPool) throw new Error('Baza podataka nije povezana.')
+  return dbPool.getConnection()
+}
+
+const MAX_BODY_BYTES = 64 * 1024
+const MAX_UPLOAD_BYTES = 6 * 1024 * 1024
+
+const SECURITY_HEADERS: Record<string, string> = {
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  // discord.com ostaje dozvoljen dok se Discord obavještenje ne prebaci na server.
+  'Content-Security-Policy': "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://discord.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+}
+
+function safeDecodePath(value: string): string | null {
+  try { return decodeURIComponent(value) } catch { return null }
+}
+
+function sniffImage(bytes: Uint8Array): string | null {
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg'
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'image/png'
+  if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) return 'image/webp'
+  return null
+}
+
+function storedPhoneMatches(customerJson: string, phone: string) {
+  try {
+    const customer = JSON.parse(customerJson) as { phone?: unknown }
+    const stored = String(customer.phone ?? '').replace(/\D/g, '')
+    return stored.length >= 6 && stored.endsWith(phone.slice(-6))
+  } catch { return false }
+}
+
+const publicAttempts = new Map<string, { count: number; resetAt: number }>()
+
+// Jednostavan klizni prozor za javne rute. Ključ je IP adresa koju je dodao proxy.
+function takePublicSlot(key: string, limit: number, windowMs: number) {
+  const now = Date.now()
+  if (publicAttempts.size > 5000) {
+    for (const [entryKey, entry] of publicAttempts) if (entry.resetAt <= now) publicAttempts.delete(entryKey)
+  }
+  const current = publicAttempts.get(key)
+  if (!current || current.resetAt <= now) {
+    publicAttempts.set(key, { count: 1, resetAt: now + windowMs })
+    return true
+  }
+  if (current.count >= limit) return false
+  current.count += 1
+  return true
+}
+
+// Kupac dobija token uz potvrdu narudžbe, pa praćenje radi bez čuvanja ličnih podataka.
+function trackTokenFor(reference: string) {
+  const secret = sessionSecret()
+  if (!secret) return ''
+  return createHmac('sha256', secret).update('bioherbica-track:' + reference).digest('base64url').slice(0, 32)
+}
+
 const app = new Hono<{ Bindings: { db: SqlDb } }>()
 
 // Hono only fills `c.var` from `c.set()`, so expose the per-request database handle here.
@@ -205,7 +270,8 @@ function adminFor(c: { req: { raw: Request } }) {
 }
 
 function requestKey(request: Request) {
-  return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  const chain = request.headers.get('x-forwarded-for')?.split(',').map((part) => part.trim()).filter(Boolean) ?? []
+  return chain[chain.length - 1] ?? request.headers.get('x-real-ip')?.trim() ?? 'unknown'
 }
 
 app.get('/api/admin/session', (c) => {
@@ -224,14 +290,22 @@ app.post('/api/admin/session', async (c) => {
   if (attempt && attempt.count >= 8 && attempt.resetAt > now) return c.json({ error: 'Previše pokušaja. Sačekajte 15 minuta.' }, 429, { ...ADMIN_HEADERS, 'Retry-After': String(Math.ceil((attempt.resetAt - now) / 1000)) })
   let body: { username?: unknown; password?: unknown }
   try { body = await c.req.json() } catch { return c.json({ error: 'Unesite korisničko ime i lozinku.' }, 400, ADMIN_HEADERS) }
+  const submittedName = typeof body.username === 'string' ? body.username.trim().toLowerCase().slice(0, 128) : ''
+  const userKey = 'user:' + (submittedName || 'unknown')
+  const userAttempt = loginAttempts.get(userKey)
+  if (userAttempt && userAttempt.count >= 10 && userAttempt.resetAt > now) return c.json({ error: 'Previše pokušaja. Sačekajte 15 minuta.' }, 429, { ...ADMIN_HEADERS, 'Retry-After': String(Math.ceil((userAttempt.resetAt - now) / 1000)) })
   const { username, password } = adminCredentials()
   const validLogin = typeof body.username === 'string' && typeof body.password === 'string' && body.username.length <= 128 && body.password.length <= 256 && secureEqual(body.username.trim(), username) && secureEqual(body.password, password)
   if (!validLogin) {
     const current = attempt && attempt.resetAt > now ? attempt : { count: 0, resetAt: now + 15 * 60 * 1000 }
     current.count += 1; loginAttempts.set(key, current)
+    const userFailure = loginAttempts.get(userKey)
+    const userNext = userFailure && userFailure.resetAt > now ? userFailure : { count: 0, resetAt: now + 15 * 60 * 1000 }
+    userNext.count += 1; loginAttempts.set(userKey, userNext)
     return c.json({ error: 'Korisničko ime ili lozinka nisu ispravni.' }, 401, ADMIN_HEADERS)
   }
   loginAttempts.delete(key)
+  loginAttempts.delete(userKey)
   const nonce = randomBytes(24).toString('base64url')
   const expiresAt = now + ADMIN_SESSION_SECONDS * 1000
   const payload = `${nonce}.${expiresAt}`
@@ -249,6 +323,8 @@ app.get('/api/admin/products', async (c) => {
   const [rows] = await c.var.db.prepare(`${PRODUCT_SELECT} ORDER BY sort_order ASC, id ASC`).execute() as unknown as [mysql.RowDataPacket[], unknown]
   return c.json({ results: rows.map(rowToProduct) }, 200, ADMIN_HEADERS)
 })
+
+app.get('/api/healthz', (c) => c.json({ ok: true, service: 'bioherbica' }, 200, { 'cache-control': 'no-store' }))
 
 app.get('/api/health', async (c) => {
   try {
@@ -279,6 +355,7 @@ app.get('/api/admin/status', async (c) => {
 
 app.post('/api/orders', async (c) => {
   if (!isSameOrigin(c.req.raw)) return c.json({ error: 'Zahtjev nije poslan s ove stranice.' }, 403)
+  if (!takePublicSlot('order:' + requestKey(c.req.raw), 5, 10 * 60 * 1000)) return c.json({ error: 'Previše zahtjeva. Pokušajte ponovo za nekoliko minuta.' }, 429, { 'Retry-After': '600' })
   const db = c.var.db as unknown as SqlDb
   let body: { customer?: Customer; items?: { id: string; option?: string; quantity: number }[]; paymentMethod?: string }
   try { body = await c.req.json() } catch { return c.json({ error: 'Podaci narudžbe nisu ispravni.' }, 400) }
@@ -374,7 +451,35 @@ app.post('/api/orders', async (c) => {
     createdAt,
   ])
 
-  return c.json({ reference, subtotal, deliveryCharge: null, total: null, status: 'Novo', createdAt }, 201)
+  return c.json({ reference, subtotal, deliveryCharge: null, total: null, status: 'Novo', createdAt, trackToken: trackTokenFor(reference) }, 201)
+})
+
+app.post('/api/orders/track', async (c) => {
+  if (!isSameOrigin(c.req.raw)) return c.json({ error: 'Zahtjev nije poslan s ove stranice.' }, 403)
+  if (!takePublicSlot('track:' + requestKey(c.req.raw), 20, 15 * 60 * 1000)) return c.json({ error: 'Previše provjera. Sačekajte 15 minuta.' }, 429, { 'Retry-After': '900' })
+  let body: { reference?: unknown; phone?: unknown; token?: unknown }
+  try { body = await c.req.json() } catch { return c.json({ error: 'Podaci za praćenje nisu ispravni.' }, 400) }
+  const reference = typeof body.reference === 'string' ? body.reference.trim().toUpperCase() : ''
+  if (!/^BH-[A-Z0-9]{8}$/.test(reference)) return c.json({ error: 'Referenca narudžbe nije validna.' }, 400)
+  const phone = typeof body.phone === 'string' ? body.phone.replace(/\D/g, '') : ''
+  const token = typeof body.token === 'string' ? body.token.trim() : ''
+  const [rows] = await c.var.db.prepare('SELECT reference, CAST(customer_json AS CHAR) AS customerJson, CAST(items_json AS CHAR) AS itemsJson, subtotal, delivery_charge AS deliveryCharge, total, status, created_at AS createdAt, tracking_code AS trackingCode FROM orders WHERE reference = ?').execute([reference]) as unknown as [{ reference: string; customerJson: string; itemsJson: string; subtotal: number; deliveryCharge: number | null; total: number | null; status: OrderStatus; createdAt: string; trackingCode: string | null }[], unknown]
+  const row = rows[0]
+  const tokenValid = token.length > 0 && secureEqual(token, trackTokenFor(reference))
+  const phoneValid = phone.length >= 6 && row ? storedPhoneMatches(row.customerJson, phone) : false
+  if (!row || (!tokenValid && !phoneValid)) return c.json({ error: 'Narudžba nije pronađena ili podaci ne odgovaraju.' }, 404)
+  let items: OrderItem[] = []
+  try { const parsed = JSON.parse(row.itemsJson); if (Array.isArray(parsed)) items = parsed as OrderItem[] } catch { items = [] }
+  return c.json({
+    reference: row.reference,
+    status: row.status,
+    createdAt: row.createdAt,
+    trackingCode: row.trackingCode ?? '',
+    subtotal: row.subtotal,
+    deliveryCharge: row.deliveryCharge,
+    total: row.total,
+    items: items.map((item) => ({ name: String(item?.name ?? ''), option: item?.option, quantity: Number(item?.quantity ?? 0), unitPrice: Number(item?.unitPrice ?? 0), lineTotal: Number(item?.lineTotal ?? 0) })),
+  }, 200, { 'cache-control': 'no-store' })
 })
 
 app.get('/api/admin/orders', async (c) => {
@@ -504,7 +609,9 @@ app.post('/api/admin/orders/:reference/email', async (c) => {
 })
 
 app.get('/api/admin/images/:key{.+}', async (c) => {
-  const key = decodeURIComponent(c.req.param('key'))
+  const decodedKey = safeDecodePath(c.req.param('key'))
+  if (decodedKey === null) return c.json({ error: 'Naziv slike nije validan.' }, 400)
+  const key = decodedKey
   if (!IMAGE_KEY_RE.test(key)) return c.json({ error: 'Naziv slike nije validan.' }, 400)
   if (!adminFor(c)) return c.json({ error: 'Prijava nije odobrena.' }, 401, ADMIN_HEADERS)
 
@@ -528,19 +635,19 @@ app.post('/api/admin/images/:key{.+}', async (c) => {
   if (!IMAGE_KEY_RE.test(key)) return c.json({ error: 'Naziv slike nije validan.' }, 400)
   if (!adminFor(c)) return c.json({ error: 'Prijava nije odobrena.' }, 401, ADMIN_HEADERS)
 
-  const contentType = c.req.header('content-type') ?? ''
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(contentType)) return c.json({ error: 'Dozvoljene su JPG, PNG i WebP slike.' }, 415)
-
   let form: FormData
   try { form = await c.req.formData() } catch { return c.json({ error: 'Datoteka fotografije nije ispravna.' }, 400) }
 
   const file = form.get('file')
-  if (!(file instanceof File) || !file.size || file.size > 5 * 1024 * 1024 || file.type !== contentType) {
+  if (!(file instanceof File) || !file.size || file.size > 5 * 1024 * 1024) {
     return c.json({ error: 'Slika mora biti ispravna i manja od 5 MB.' }, 413)
   }
+  const imageBytes = new Uint8Array(await file.arrayBuffer())
+  const mimetype = sniffImage(imageBytes)
+  if (!mimetype) return c.json({ error: 'Dozvoljene su JPG, PNG i WebP slike.' }, 415)
 
   const db = c.var.db
-  await db.prepare('INSERT INTO product_images (keyname, mimetype, data, created_at) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE mimetype = VALUES(mimetype), data = VALUES(data), created_at = NOW()').execute([key, contentType, await file.arrayBuffer()])
+  await db.prepare('INSERT INTO product_images (keyname, mimetype, data, created_at) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE mimetype = VALUES(mimetype), data = VALUES(data), created_at = NOW()').execute([key, mimetype, imageBytes])
 
   return c.json({ ok: true, key })
 })
@@ -841,7 +948,8 @@ app.get('/api/search-suggestions', async (c) => {
   if (!q || q.length < 2) return c.json({ results: [] }, 200)
 
   const db = c.var.db
-  const [rows] = await db.prepare('SELECT slug, name FROM products WHERE available = 1 AND (LOWER(name) LIKE ? OR LOWER(short) LIKE ?) LIMIT 12').execute([`%${q}%`, `%${q}%`]) as unknown as { slug: string; name: string }[][]
+  const needle = '%' + q.replace(/[%_\\]/g, '') + '%'
+  const [rows] = await db.prepare('SELECT slug, name FROM products WHERE available = 1 AND (LOWER(name) LIKE ? OR LOWER(short) LIKE ?) LIMIT 12').execute([needle, needle]) as unknown as { slug: string; name: string }[][]
   return c.json({ results: rows.map((r: { slug: string; name: string }) => ({ slug: r.slug, name: r.name })) }, 200)
 })
 
@@ -854,7 +962,9 @@ function baseUrlFor(c: { req: { header: (name: string) => string | undefined; ur
 
 app.get('*', async (c) => {
   const url = new URL(c.req.url)
-  const path = decodeURIComponent(url.pathname)
+  const decoded = safeDecodePath(url.pathname)
+  if (decoded === null) return c.json({ error: 'Stranica nije pronađena.' }, 400)
+  const path = decoded
 
   if (path === '/' || path.endsWith('.html')) {
     const index = join(STATIC_ROOT, 'index.html')
@@ -894,7 +1004,13 @@ const port = Number(process.env.PORT ?? 3000)
 const http = await import('node:http')
 const serveStatic = async (request: Request, response: import('node:http').ServerResponse) => {
   const url = new URL(request.url)
-  const path = decodeURIComponent(url.pathname)
+  const decodedPath = safeDecodePath(url.pathname)
+  if (decodedPath === null) {
+    response.statusCode = 400
+    response.end('Bad request')
+    return true
+  }
+  const path = decodedPath
   if (request.method !== 'GET' && request.method !== 'HEAD') return false
   if (url.pathname.startsWith('/api/')) return false
 
@@ -920,8 +1036,23 @@ const serveStatic = async (request: Request, response: import('node:http').Serve
 }
 
 const server = http.createServer(async (request, response) => {
+  for (const [headerName, headerValue] of Object.entries(SECURITY_HEADERS)) response.setHeader(headerName, headerValue)
+  try {
   const chunks: Buffer[] = []
-  for await (const chunk of request) chunks.push(Buffer.from(chunk))
+  const bodyLimit = (request.url ?? '').startsWith('/api/admin/images') ? MAX_UPLOAD_BYTES : MAX_BODY_BYTES
+  let receivedBytes = 0
+  let bodyTooLarge = false
+  for await (const chunk of request) {
+    receivedBytes += chunk.length
+    if (receivedBytes > bodyLimit) { bodyTooLarge = true; break }
+    chunks.push(Buffer.from(chunk))
+  }
+  if (bodyTooLarge) {
+    response.statusCode = 413
+    response.setHeader('content-type', 'application/json; charset=utf-8')
+    response.end(JSON.stringify({ error: 'Zahtjev je prevelik.' }))
+    return
+  }
   const requestUrl = `http://${request.headers.host ?? 'localhost'}${request.url ?? '/'}`
   const body = chunks.length ? Buffer.concat(chunks) : undefined
   const apiRequest = new Request(requestUrl, {
@@ -944,9 +1075,9 @@ const server = http.createServer(async (request, response) => {
     return
   }
 
-  let connection: mysql.Connection | undefined
+  let connection: mysql.PoolConnection | undefined
   const openConnection = async () => {
-    connection ??= await mysql.createConnection(DATABASE_URL)
+    connection ??= await acquireConnection()
     return connection
   }
   // Opened on first query so the admin login and other database-free routes still work
@@ -956,7 +1087,7 @@ const server = http.createServer(async (request, response) => {
     prepare(sql) {
       return { async execute(params) { return (await openConnection()).execute(sql, params as never) } }
     },
-    async end() { const current = connection; connection = undefined; await current?.end().catch(() => {}) },
+    async end() { await Promise.resolve() },
   }
   try {
     const result = await app.fetch(apiRequest, { db } as never)
@@ -968,12 +1099,22 @@ const server = http.createServer(async (request, response) => {
     response.statusCode = 503
     response.setHeader('content-type', 'application/json; charset=utf-8')
     response.end(JSON.stringify({ error: 'Servis trenutno nije dostupan.' }))
-  } finally {
-    await connection?.end().catch(() => {})
+  } finally { await connection?.release() }
+  } catch (error) {
+    console.error('BioHerbica request failed:', error instanceof Error ? error.message : error)
+    if (!response.headersSent) {
+      response.statusCode = 500
+      response.setHeader('content-type', 'application/json; charset=utf-8')
+      response.end(JSON.stringify({ error: 'Zahtjev trenutno nije moguće obraditi.' }))
+    }
   }
 })
 
-server.listen(port, '0.0.0.0', () => console.log(`BioHerbica listening on ${port}`))
+server.listen(port, '0.0.0.0', () => console.log('BioHerbica listening on ' + port))
+
+process.on('unhandledRejection', (reason) => {
+  console.error('BioHerbica unhandled rejection:', reason instanceof Error ? reason.message : reason)
+})
 
 // A fresh Railway deploy starts with an empty database, so create the tables and add any
 // missing catalogue entries once at boot. Existing rows are never overwritten.
