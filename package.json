@@ -11,6 +11,7 @@
     "start": "node server/index.js",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "smoke": "node scripts/smoke.mjs",
     "db:bootstrap": "npm run build:bootstrap && node build/server/db-bootstrap.js"
   },
   "dependencies": {
