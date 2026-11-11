@@ -1,0 +1,35 @@
+name: ci
+on:
+  push:
+    branches: ['improve/**']
+  pull_request:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Sync lockfile (branch pushes only)
+        if: github.event_name == 'push'
+        run: |
+          npm install --package-lock-only --ignore-scripts
+          if ! git diff --quiet package-lock.json; then
+            git config user.name "ci"
+            git config user.email "ci@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "ci: sync package-lock.json"
+            git push
+          fi
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm run smoke --if-present
+      - run: npm audit --omit=dev
