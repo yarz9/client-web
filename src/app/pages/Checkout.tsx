@@ -42,16 +42,13 @@ export function Checkout() {
     setState('sending'); setError('')
     try {
       const response = await fetch('/api/orders', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ customer: form, items: cart.items.map((item) => ({ id: item.slug, option: item.option, quantity: item.quantity })), paymentMethod: 'pouzece' }) })
-      const body = await response.json() as { reference?: string; error?: string; subtotal?: number }
+      const body = await response.json() as { reference?: string; error?: string; subtotal?: number; trackToken?: string }
       if (!response.ok || !body.reference) throw new Error(body.error ?? 'Narudžbu trenutno nije moguće sačuvati.')
       // Potvrda se pamti lokalno da se ne izgubi na osvježavanje stranice ili povratak na sajt.
       saveOrder({
         reference: body.reference,
         createdAt: new Date().toISOString(),
-        name: form.name.trim(),
-        phone: form.phone.trim(),
-        city: form.city.trim(),
-        address: form.address.trim(),
+        trackToken: body.trackToken ?? '',
         items: cart.items.map(item => ({ slug: item.slug, name: item.product.name, option: item.option, quantity: item.quantity, unitPrice: itemUnitPrice(item) ?? 0 })),
         subtotal: body.subtotal ?? cart.subtotal,
         status: 'Novo',
@@ -97,7 +94,7 @@ export function OrderConfirmed() {
   if (!checked) return <Container className="pb-16 pt-16"><p className="font-display text-[30px]">Učitava se potvrda…</p></Container>
 
   const reference = state?.reference ?? saved?.reference ?? routeReference ?? ''
-  const name = state?.customer.name ?? saved?.name ?? ''
+  const name = state?.customer.name ?? ''
   const subtotal = state?.subtotal ?? saved?.subtotal ?? 0
   const rows: DisplayRow[] = state
     ? state.items.map(item => {
@@ -113,7 +110,7 @@ export function OrderConfirmed() {
     <h1 className="font-display mt-6 text-[43px] leading-[1.02] sm:text-[58px]">{found ? 'Zahtjev je zaprimljen' : 'Nema potvrđene narudžbe'}</h1>
     {found ? <>
       <p className="mt-4 text-[13px] text-muted">Referenca zahtjeva: <strong className="text-fg">{reference}</strong></p>
-      <p className="mt-3 text-[12px] leading-relaxed text-muted">Hvala, {name}. Plaćanje je pouzećem. BioHerbica potvrđuje dostupnost i cijenu dostave prije dogovora o konačnom iznosu. Ovo još nije prihvaćena narudžba.</p>
+      <p className="mt-3 text-[12px] leading-relaxed text-muted">Hvala{name ? ', ' + name : ''}. Plaćanje je pouzećem. BioHerbica potvrđuje dostupnost i cijenu dostave prije dogovora o konačnom iznosu. Ovo još nije prihvaćena narudžba.</p>
       <p className="mt-3 text-[11px] leading-relaxed text-faint">Referenca je sačuvana na ovom uređaju, pa se ova potvrda može ponovo otvoriti i kasnije.</p>
       <div className="mt-6 border-y border-line py-4 text-left">
         <p className="text-[10px] uppercase tracking-[.14em] text-olive">Vaš zahtjev</p>
