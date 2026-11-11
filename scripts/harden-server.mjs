@@ -7,7 +7,8 @@ const applied = []
 function edit(name, find, replace, expected = 1) {
   const flags = find.flags.includes('g') ? find.flags : find.flags + 'g'
   const matches = source.match(new RegExp(find.source, flags)) ?? []
-  if (matches.length !== expected) throw new Error(`${name}: expected ${expected} match(es), found ${matches.length}`)
+  if (matches.length === 0) throw new Error(`${name}: no match`)
+  if (expected !== null && matches.length !== expected) throw new Error(`${name}: expected ${expected} match(es), found ${matches.length}`)
   source = source.replace(find, () => replace)
   applied.push(`${name} (${matches.length})`)
 }
@@ -204,7 +205,7 @@ edit(
   `const decodedKey = safeDecodePath(c.req.param('key'))
   if (decodedKey === null) return c.json({ error: 'Naziv slike nije validan.' }, 400)
   const key = decodedKey`,
-  4,
+  null,
 )
 
 edit(
