@@ -198,17 +198,14 @@ edit(
 
 edit('store sniffed mime type', /\.execute\(\[key, contentType, await file\.arrayBuffer\(\)\]\)/, '.execute([key, mimetype, imageBytes])')
 
-for (const [name, route] of [
-  ['admin image read', "app.get('/api/admin/images/:key{.+}'"],
-  ['admin image write', "app.post('/api/admin/images/:key{.+}'"],
-  ['admin image delete', "app.delete('/api/admin/images/:key{.+}'"],
-  ['public image read', "app.get('/api/images/:key{.+}'"],
-]) {
-  const pattern = new RegExp(route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ", async \\(c\\) => \\{\\s*const key = decodeURIComponent\\(c\\.req\\.param\\('key'\\)\\)")
-  edit(name + ' decodes safely', pattern, route + `, async (c) => {
-  const key = safeDecodePath(c.req.param('key'))
-  if (key === null) return c.json({ error: 'Naziv slike nije validan.' }, 400)`)
-}
+edit(
+  'image routes decode safely',
+  /const key = decodeURIComponent\(c\.req\.param\('key'\)\)/,
+  `const decodedKey = safeDecodePath(c.req.param('key'))
+  if (decodedKey === null) return c.json({ error: 'Naziv slike nije validan.' }, 400)
+  const key = decodedKey`,
+  4,
+)
 
 edit(
   'single page fallback decodes safely',
