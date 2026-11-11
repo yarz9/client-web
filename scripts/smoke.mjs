@@ -67,6 +67,8 @@ function request(base, path, { method = 'GET', headers = {}, body, timeout = 800
 
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms))
 
+// Ready means "the port answers HTTP", whatever the status: routes that need a
+// database legitimately answer 503, and the checks decide what each route must return.
 async function startServer(env) {
   const port = await freePort()
   const child = spawn(process.execPath, [entry], {
@@ -85,13 +87,13 @@ async function startServer(env) {
   while (Date.now() < deadline) {
     if (child.exitCode !== null) throw new Error(`server exited early: ${diagnose()}`)
     try {
-      const res = await request(base, '/api/healthz', { timeout: 2000 })
-      if (res.status === 200) return { child, base, diagnose }
+      await request(base, '/api/healthz', { timeout: 2000 })
+      return { child, base, diagnose }
     } catch {}
     await sleep(150)
   }
   child.kill('SIGKILL')
-  throw new Error(`server did not answer /api/healthz in time: ${diagnose()}`)
+  throw new Error(`server never accepted a request: ${diagnose()}`)
 }
 
 async function stopServer(server) {
@@ -130,6 +132,13 @@ function login(base, { username = 'smoke-admin', password = 'smoke-lozinka-1234'
   }
   if (ip) headers['x-forwarded-for'] = ip
   return request(base, '/api/admin/session', { method: 'POST', headers, body })
+}
+
+function sessionCookie(response) {
+  const raw = response.headers['set-cookie']
+  const list = Array.isArray(raw) ? raw : raw ? [raw] : []
+  const cookie = list.map((value) => String(value).split(';')[0]).find((value) => value.startsWith('bioherbica_admin='))
+  return cookie ?? ''
 }
 
 // --- minimal valid PNG, generated in-process ---------------------------------
@@ -236,6 +245,15 @@ async function main() {
       await waitAlive(server)
     })
 
+    // Log in before the limiter test locks the username; the session survives it.
+    let cookie = ''
+    await expect('admin login succeeds with the configured credentials', async () => {
+      const res = await login(server.base)
+      cookie = sessionCookie(res)
+      must(res.status === 200, `status ${res.status}`)
+      must(cookie.length > 0, 'no bioherbica_admin cookie in the response')
+    })
+
     await expect('rotating X-Forwarded-For still hits 429 by the 11th attempt', async () => {
       const statuses = []
       for (let attempt = 1; attempt <= 12; attempt += 1) {
@@ -273,7 +291,7 @@ async function main() {
       const upload = multipart(makePng(), 'image/png')
       const res = await request(server.base, '/api/admin/images/smoke/test.png', {
         method: 'POST',
-        headers: { origin: server.base.href, 'content-type': upload.type, 'content-length': String(upload.body.length) },
+        headers: { origin: server.base.href, cookie, 'content-type': upload.type, 'content-length': String(upload.body.length) },
         body: upload.body,
       })
       must(res.status !== 415, `status ${res.status}`)
@@ -283,7 +301,7 @@ async function main() {
       const upload = multipart(Buffer.from('ovo nije slika, samo tekst\n', 'utf8'), 'image/png')
       const res = await request(server.base, '/api/admin/images/smoke/fake.png', {
         method: 'POST',
-        headers: { origin: server.base.href, 'content-type': upload.type, 'content-length': String(upload.body.length) },
+        headers: { origin: server.base.href, cookie, 'content-type': upload.type, 'content-length': String(upload.body.length) },
         body: upload.body,
       })
       must(res.status === 415, `status ${res.status}`)
