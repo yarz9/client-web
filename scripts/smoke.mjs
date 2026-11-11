@@ -25,6 +25,7 @@ function must(condition, message) {
 
 // One failing check must never skip the rest of the suite.
 async function expect(name, run) {
+  console.log(`RUN   ${name}`)
   try {
     await run()
     check(name, true)
@@ -46,7 +47,8 @@ function freePort() {
   })
 }
 
-function request(base, path, { method = 'GET', headers = {}, body } = {}) {
+// Every request is bounded: a wedged socket must fail a check, not hang the suite.
+function request(base, path, { method = 'GET', headers = {}, body, timeout = 8000 } = {}) {
   return new Promise((resolveResponse, reject) => {
     const req = http.request({ hostname: base.hostname, port: base.port, path, method, headers }, (res) => {
       const chunks = []
@@ -56,6 +58,7 @@ function request(base, path, { method = 'GET', headers = {}, body } = {}) {
         resolveResponse({ status: res.statusCode ?? 0, headers: res.headers, text: buffer.toString('utf8'), buffer })
       })
     })
+    req.setTimeout(timeout, () => req.destroy(new Error(`no response within ${timeout}ms`)))
     req.on('error', (error) => reject(error))
     if (body !== undefined) req.write(body)
     req.end()
@@ -82,7 +85,7 @@ async function startServer(env) {
   while (Date.now() < deadline) {
     if (child.exitCode !== null) throw new Error(`server exited early: ${diagnose()}`)
     try {
-      const res = await request(base, '/api/healthz')
+      const res = await request(base, '/api/healthz', { timeout: 2000 })
       if (res.status === 200) return { child, base, diagnose }
     } catch {}
     await sleep(150)
@@ -102,16 +105,20 @@ async function stopServer(server) {
   if (child.exitCode === null) child.kill('SIGKILL')
 }
 
-// The server drops the socket of an oversized request, so give it a moment and retry.
-async function waitAlive(server, attempts = 25) {
+// After an oversized body the server drops that socket, so retry briefly.
+async function waitAlive(server, attempts = 10) {
+  let last = 'no attempt'
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     try {
-      const res = await request(server.base, '/api/healthz')
+      const res = await request(server.base, '/api/healthz', { timeout: 2000 })
       if (res.status === 200) return
-    } catch {}
-    await sleep(200)
+      last = `status ${res.status}`
+    } catch (error) {
+      last = error instanceof Error ? error.message : String(error)
+    }
+    await sleep(500)
   }
-  throw new Error(`server stopped answering /api/healthz (${server.diagnose()})`)
+  throw new Error(`${last} (${server.diagnose()})`)
 }
 
 function login(base, { username = 'smoke-admin', password = 'smoke-lozinka-1234', ip } = {}) {
@@ -252,7 +259,7 @@ async function main() {
       const bigBody = 'x'.repeat(200 * 1024)
       const res = await request(server.base, '/api/orders', {
         method: 'POST',
-        headers: { origin: server.base.href, 'content-type': 'application/json', 'content-length': String(bigBody.length) },
+        headers: { origin: server.base.href, 'content-type': 'application/json', 'content-length': String(bigBody.length), connection: 'close' },
         body: bigBody,
       })
       must(res.status === 413, `status ${res.status}`)
@@ -337,12 +344,21 @@ async function main() {
   }
 }
 
+// A wedged child must never keep the suite (and the CI job) hanging.
+const watchdog = setTimeout(() => {
+  console.error('smoke watchdog: the suite did not finish within 240s')
+  for (const child of children) child.kill('SIGKILL')
+  process.exit(1)
+}, 240000)
+watchdog.unref()
+
 main()
   .catch((error) => {
     console.error('smoke test crashed:', error instanceof Error ? error.message : error)
     process.exitCode = 1
   })
   .finally(async () => {
+    clearTimeout(watchdog)
     for (const child of children) child.kill('SIGKILL')
     const failed = results.filter((result) => !result.ok)
     console.log(`\n${results.length - failed.length}/${results.length} checks passed`)
