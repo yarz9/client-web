@@ -471,6 +471,7 @@ app.post('/api/orders/track', async (c) => {
   let items: OrderItem[] = []
   try { const parsed = JSON.parse(row.itemsJson); if (Array.isArray(parsed)) items = parsed as OrderItem[] } catch { items = [] }
   return c.json({
+    trackToken: trackTokenFor(reference),
     reference: row.reference,
     status: row.status,
     createdAt: row.createdAt,

@@ -13,6 +13,7 @@ type TrackedOrder = {
   status: string
   createdAt: string
   trackingCode: string
+  trackToken?: string
   subtotal: number
   deliveryCharge: number | null
   total: number | null
@@ -169,12 +170,12 @@ export function OrderTracking() {
   async function verifyWithPhone(event: FormEvent) {
     event.preventDefault()
     const digits = phone.replace(/\D/g, '')
-    if (!phoneTarget || digits.length < 6) { setNotice('Unesite broj telefona s narudžbe.'); return }
+    if (!pendingPhone || digits.length < 6) { setNotice('Unesite broj telefona s narudžbe.'); return }
     try {
-      const tracked = await requestTracking(phoneTarget, { phone: digits })
+      const tracked = await requestTracking(pendingPhone, { phone: digits })
       if (!tracked) { setNotice('Broj telefona se ne poklapa s tom narudžbom.'); return }
       setLive(current => ({ ...current, [tracked.reference]: tracked }))
-      patchOrder(tracked.reference, { status: tracked.status })
+      patchOrder(tracked.reference, { status: tracked.status, trackToken: tracked.trackToken || undefined })
       setOrders(loadOrders())
       setPhoneTarget('')
       setPhone('')
@@ -202,6 +203,7 @@ export function OrderTracking() {
           items: tracked.items.map(item => ({ slug: '', name: item.name, option: item.option, quantity: item.quantity, unitPrice: item.unitPrice })),
           subtotal: tracked.subtotal,
           status: tracked.status,
+          trackToken: tracked.trackToken,
         })
         setOrders(loadOrders())
       }
@@ -214,6 +216,7 @@ export function OrderTracking() {
     }
   }
 
+  const pendingPhone = phoneTarget || orders.find(order => !order.trackToken)?.reference || ''
   const needle = query.trim().toLowerCase()
   const visible = (needle ? orders.filter(order => order.reference.toLowerCase().includes(needle)) : orders)
     .map(order => live[order.reference] ?? fromSaved(order))
@@ -263,9 +266,9 @@ export function OrderTracking() {
         </>
       )}
 
-      {phoneTarget ? (
+      {pendingPhone ? (
         <form onSubmit={verifyWithPhone} className="mt-8 max-w-md border border-line bg-surface p-5">
-          <p className="text-[13px] font-medium">Potvrdite narudžbu {phoneTarget}</p>
+          <p className="text-[13px] font-medium">Potvrdite narudžbu {pendingPhone}</p>
           <p className="mt-1 text-[12px] leading-relaxed text-muted">Ova narudžba je sačuvana bez tokena za praćenje. Unesite telefon s narudžbe da biste vidjeli stvarni status.</p>
           <input className={inputClass + ' mt-3'} value={phone} onChange={event => setPhone(event.target.value)} placeholder="Broj telefona" inputMode="tel" autoComplete="tel" />
           <div className="mt-3 flex gap-2">
